@@ -1,31 +1,39 @@
 "use strict";
-// --collection of character types-- //
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
+// note: assume user not writing regex, but literals, so . is a period, not any
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.anyDigit = void 0;
+exports.optional = exports.atLeast = exports.minMax = exports.repeating = exports.zeroOrMore = exports.oneOrMore = exports.endsWith = exports.startsWith = exports.either = exports.upperOrLower = exports.anyLetterExcept = exports.anyUpperCaseExcept = exports.anyLowerCaseExcept = exports.anyDigitExcept = exports.anyCharacterExcept = exports.formatRegex = exports.nonPrint = exports.anySpecChar = exports.anyLetter = exports.anyUpperCase = exports.anyLowerCase = exports.anyDigit = exports.anyCharacter = void 0;
+// --collection of character types-- //
 // matches a single character for any possible character
-var anyCharacter = "."; // correct when in set []?
+exports.anyCharacter = "."; // correct when in set []?
+// match newLine?
 // matches a single character for any number 0 through 9
 exports.anyDigit = "[0123456789]";
 // matches a single character for any lowercase letter
-var anyLowerCase = "[abcdefghijklmnopqrstuvwxyz]";
+exports.anyLowerCase = "[abcdefghijklmnopqrstuvwxyz]";
 // matches a single character for any uppercase letter
-var anyUpperCase = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]";
+exports.anyUpperCase = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]";
 // matches a single character for any possible letter, lower or upper case
-var anyLetter = "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]";
-var backspaceChar = "[\b]";
-var formFeedChar = "[\f]";
-var lineFeedChar = "[\n]";
-var carriageReturnChar = "[\r]";
-var tabChar = "[\t]";
-var verticalTabChar = "[\f]";
-var whitespaceChar = "[\f\n\r\t\v]";
+exports.anyLetter = "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]";
+// matches a single character for any special character that must be escaped
+// eslint-disable-next-line no-useless-escape
+exports.anySpecChar = /[.*+\-?^${}()|[\]\\]/; //"[.*+-?^${}()|[\]\\]";
+var anyTextFormat = "[!&()_-;:'\",.<>?]";
+var anyOther = "[`~!@#$%^&*()-_=+[]|{};:'\",<.>/?\\]"; // just use except with both letters and digits?
+exports.nonPrint = {
+    // rename 'whitespace'? // add testing
+    backspace: "[\b]",
+    formFeed: "\f",
+    lineFeed: "\n",
+    carriageReturn: "\r",
+    tab: "\t",
+    verticalTab: "\v",
+};
+var backspace = "[\b]";
+var formFeed = "[\f]";
+var lineFeed = "[\n]";
+var carriageReturn = "[\r]";
+var tab = "[\t]";
+var verticalTab = "[\v]";
 var anyHexadecimal = "[abcdefABCDEF0123456789]";
 var combineSets = function () {
     var sets = [];
@@ -35,8 +43,9 @@ var combineSets = function () {
     var combination = sets.join("").replace(/[[\]]/g, "");
     return "[" + combination + "]";
 };
+// func to generate [] options submitted by user
 // check later
-var formatForRegex = function (text) {
+exports.formatRegex = function (text) {
     return text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 }; // $& means the whole matched string
 var removeDigitsFromStringTemplate = function (regexOptions) { return function () {
@@ -61,80 +70,39 @@ var removeTextFromStringTemplate = function (regexOptions) { return function () 
     return regexOptions.replace(removalRegex, "");
 }; };
 // generate 'except' functions to return filtered collections
-var anyCharacterExcept = function () {
+exports.anyCharacterExcept = function () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    return "[^" + args.join("") + "]";
+    return "[^" + args.map(function (x) { return String(x); }).join("") + "]";
 }; /// check later
-var anyDigitExcept = removeDigitsFromStringTemplate(exports.anyDigit);
-var anyLowerCaseExcept = removeTextFromStringTemplate(anyLowerCase);
-var anyUpperCaseExcept = removeTextFromStringTemplate(anyUpperCase);
-var anyLetterExcept = removeTextFromStringTemplate(anyLetter);
+exports.anyDigitExcept = removeDigitsFromStringTemplate(exports.anyDigit);
+exports.anyLowerCaseExcept = removeTextFromStringTemplate(exports.anyLowerCase);
+exports.anyUpperCaseExcept = removeTextFromStringTemplate(exports.anyUpperCase);
+exports.anyLetterExcept = removeTextFromStringTemplate(exports.anyLetter);
 // return letter as option for either upper or lower case
-var upperOrLower = function (letter) {
+exports.upperOrLower = function (letter) {
     var lowerCase = letter.toLowerCase();
     var upperCase = letter.toUpperCase();
     return "[" + lowerCase + upperCase + "]";
 };
-// matches a single character for any special character
-var anySpecChar = /[!]/; //add later
-var startsWith = function (startingText) { return "^" + startingText; }; // add later
-var endsWith = function (endingText) { return "" + endingText; }; // add later
-var getRange = function (targetLength, array) {
-    if (array === void 0) { array = []; }
-    var arrayLength = array.length;
-    if (arrayLength === targetLength) {
-        return array;
+exports.either = function () {
+    var texts = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        texts[_i] = arguments[_i];
     }
-    else {
-        var updatedArray = __spreadArrays(array, [arrayLength]);
-        return getRange(targetLength, updatedArray);
-    }
-};
-var repeat = function (text, counter) {
-    return getRange(counter)
-        .map(function () { return text; })
-        .join("");
-};
-// anythingBut
-// excluding
-/////// POSITIONING
-var oneOrMore = function (character) { return character + "+"; };
-var zeroOrMore = function (character) { return character + "*"; };
-var zeroOrOne = function (character) { return character + "?"; }; // rename "optional"?
-// consecutiveMatch
-var consecutiveMatch = function (character, counter) {
-    return character + "{" + counter + "}";
-};
-var rangeMatch = function (character, min, max) {
-    return character + "{" + min + "," + max + "}";
-};
-// upTo {0,3} ?
-var atLeast = function (character, min) { return character + "{" + min + ",}"; };
-// lazy match for iminimal = +?, *?, etc. page 49
+    return texts.join("|");
+}; // add testing, need ()?
+exports.startsWith = function (startingText) { return "^(" + startingText + ")"; };
+exports.endsWith = function (endingText) { return "(" + endingText + ")$"; };
+exports.oneOrMore = function (text) { return "(" + text + ")+"; };
+exports.zeroOrMore = function (text) { return "(" + text + ")*"; };
+exports.repeating = function (text, counter) { return "(" + text + "){" + counter + "}"; };
+exports.minMax = function (text, min, max) { return "(" + text + "){" + min + "," + max + "}"; };
+exports.atLeast = function (text, min) { return "(" + text + "){" + min + ",}"; };
+// lazy match for minimal = +?, *?, etc. page 49
 // lazy by default?
 //"< test < some > more >".replace(/<.+?>/, "")
-// findAt
-/*
-// format:
-// construct regex as declarative string:
- const fourNumbers = repeat(anyNumber, 4)
- const fourNumbersWithPossibleDash = maybe("-") + fourNumbers
- const creditCard = rgx.construct(
-    
-    fourNumbersWithPossibleDash,
-    fourNumbersWithPossibleDash,
-    fourNumbersWithPossibleDash,
-    fourNumbers
-)
-*/
-//tests
-//credit card
-//lastName, firstName
-// this.email@address.com
-// lots!of*special[]characters^
-// ssn
-// every 5th char is x
-// excludes specified
+exports.optional = function (text) { return "(" + text + ")?"; };
+/////// POSITIONING

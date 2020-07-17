@@ -15,6 +15,9 @@ import {
   formatRegex,
   upperOrLower,
   optional,
+  either,
+  startsWith,
+  endsWith,
   oneOrMore,
   zeroOrMore,
   repeating,
@@ -32,7 +35,7 @@ const everyUpperCase = everyLowerCase.map((x) => x.toUpperCase());
 const everyLetter = [...everyLowerCase, ...everyUpperCase];
 const everySpecChar = [...".*+-?^${}()|[]".split(""), "\\"];
 
-describe("RGX -declarative regular expression constructor", () => {
+describe("RGX - declarative regular expression constructor", () => {
   describe("Test collections of characters to match with regex", () => {
     describe("anyCharacter", () => {
       const testAnyCharacter = initRegex(anyCharacter);
@@ -176,6 +179,24 @@ describe("RGX -declarative regular expression constructor", () => {
       it("render text with optional marker", () => {
         const optionalHello = optional("hello");
         expect(optionalHello).to.equal("(hello)?");
+      });
+    });
+    describe("mark 2 or more text items as possible", () => {
+      it("render text with either marker", () => {
+        const eitherOption = either("Hi", "Bye"); // add req for at least 2 args?
+        expect(eitherOption).to.equal("Hi|Bye");
+      });
+    });
+    describe("mark text as positioned in beginning", () => {
+      it("render text with beginning marker", () => {
+        const startingText = startsWith("hello");
+        expect(startingText).to.equal("^(hello)");
+      });
+    });
+    describe("mark text as positioned at end", () => {
+      it("render text with ending marker", () => {
+        const endingText = endsWith("goodbye");
+        expect(endingText).to.equal("(goodbye)$");
       });
     });
   });

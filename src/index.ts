@@ -26,14 +26,22 @@ const anyTextFormat = "[!&()_-;:'\",.<>?]";
 
 const anyOther = "[`~!@#$%^&*()-_=+[]|{};:'\",<.>/?\\]"; // just use except with both letters and digits?
 
-const backspaceChar = "[\b]";
-const formFeedChar = "[\f]";
-const lineFeedChar = "[\n]";
-const carriageReturnChar = "[\r]";
-const tabChar = "[\t]";
-const verticalTabChar = "[\f]";
+export const nonPrint = {
+  // rename 'whitespace'? // add testing
+  backspace: "[\b]",
+  formFeed: "\f",
+  lineFeed: "\n",
+  carriageReturn: "\r",
+  tab: "\t",
+  verticalTab: "\v",
+};
 
-const whitespaceChar = "[\f\n\r\t\v]";
+const backspace = "[\b]";
+const formFeed = "[\f]";
+const lineFeed = "[\n]";
+const carriageReturn = "[\r]";
+const tab = "[\t]";
+const verticalTab = "[\v]";
 
 const anyHexadecimal = "[abcdefABCDEF0123456789]";
 
@@ -41,6 +49,8 @@ const combineSets = (...sets: string[]) => {
   const combination = sets.join("").replace(/[[\]]/g, "");
   return `[${combination}]`;
 };
+
+// func to generate [] options submitted by user
 
 // check later
 export const formatRegex = (text: string): string =>
@@ -91,32 +101,11 @@ export const upperOrLower = (letter: string): string => {
   return `[${lowerCase}${upperCase}]`;
 };
 
-// construct(anyNumber, except(5))
-// or
-// anyNumberExcept(5)
+export const either = (...texts: string[]): string => texts.join("|"); // add testing, need ()?
 
 type RegexConvert = (x: string) => string;
-const startsWith: RegexConvert = (startingText) => `^${startingText}`; // add later
-const endsWith: RegexConvert = (endingText) => `${endingText}`; // add later
-/*
-type GetRange = (x: number, y?: number[]) => number[];
-const getRange: GetRange = (targetLength, array = []) => {
-  const arrayLength = array.length;
-  if (arrayLength === targetLength) {
-    return array;
-  } else {
-    const updatedArray = [...array, arrayLength];
-    return getRange(targetLength, updatedArray);
-  }
-};
-
-const repeat: Frequency = (text, counter) =>
-  getRange(counter)
-    .map(() => text)
-    .join("");
-*/
-// anythingBut
-// excluding
+export const startsWith: RegexConvert = (startingText) => `^(${startingText})`;
+export const endsWith: RegexConvert = (endingText) => `(${endingText})$`;
 
 /////// FREQUENCY
 type Frequency = (x: string, y: number, z?: number) => string;
@@ -125,7 +114,7 @@ export const zeroOrMore: RegexConvert = (text) => `(${text})*`;
 export const repeating: Frequency = (text, counter) => `(${text}){${counter}}`;
 export const minMax: Frequency = (text, min, max) => `(${text}){${min},${max}}`;
 export const atLeast: Frequency = (text, min) => `(${text}){${min},}`;
-// lazy match for miinimal = +?, *?, etc. page 49
+// lazy match for minimal = +?, *?, etc. page 49
 // lazy by default?
 //"< test < some > more >".replace(/<.+?>/, "")
 
