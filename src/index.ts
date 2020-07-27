@@ -129,6 +129,7 @@ interface RGXUnit {
   isOptional?: ModifyTextRGX;
   isCaptured?: ModifyTextRGX;
   // useRef?
+  // any
 }
 
 const validateKey = (removeKeys: string[]) => (key: string) =>
@@ -245,7 +246,9 @@ const initAtEnd = initModifyText(atEnd, atEndKey);
 const initIsOptional = initModifyText(isOptional, isOptionalKey);
 const initIsCaptured = initModifyText(isCaptured, isCapturedKey);
 
-// set up presets - anyLetter, etc.
+//////////////////
+// rgx presets //
+/////////////////
 
 // format presets for parsing with RGXBuild constructor
 type CreateTextObj = (text: string) => TextObject;
@@ -253,10 +256,6 @@ const createTextObj: CreateTextObj = (text) => ({
   text,
   escaped: true,
 });
-
-///////////////////////////
-// rgx text collections //
-//////////////////////////
 
 // matches a single character for any possible character
 export const anyCharacter = createTextObj("."); // correct when in set []?
@@ -329,8 +328,8 @@ const removeText: RemoveText = (rgxPreset) => (...exceptions) => {
 };
 
 // generate 'except' functions to return filtered collections
-export const anyCharacterExcept = (...args: (string | number)[]): string =>
-  `[^${args.map((x) => String(x)).join("")}]`; /// check later
+export const anyCharacterExcept = (...args: (string | number)[]): TextObject =>
+  createTextObj(`[^${args.map((x) => String(x)).join("")}]`); /// check later
 
 export const anyDigitExcept = removeDigits(anyDigit);
 export const anyLowerCaseExcept = removeText(anyLowerCase);
@@ -338,11 +337,13 @@ export const anyUpperCaseExcept = removeText(anyUpperCase);
 export const anyLetterExcept = removeText(anyLetter);
 
 // return letter as option for either upper or lower case
-export const upperOrLower = (letter: string): string => {
+export const upperOrLower = (letter: string): TextObject => {
   const lowerCase = letter.toLowerCase();
   const upperCase = letter.toUpperCase();
-  return `[${lowerCase}${upperCase}]`;
+  return createTextObj(`[${lowerCase}${upperCase}]`);
 };
+
+// add anyLetterUpTo/ between functions?
 
 // set up common searches - ssn, email, etc.
 // set up variable units - (<title>...)<title>
