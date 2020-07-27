@@ -1,25 +1,280 @@
-import uniqid from "uniqid";
+//
 
-// note: assume user not writing regex, but literals, so . is a period, not any
+// Text Objects
+// user-submitted strings will be formatted to escape special characters
+// already formatted strings will be stored in text objects to distinguish them
+// a combination of user-strings and text objects can be submitted to text-transformation functions
+// so these will be parsed before running the function
 
-// --collection of character types-- //
+interface TextObject {
+  text: string;
+  escaped: boolean;
+}
+
+// format user-submitted strings to escape special characters
+export const formatRegex: ModifyText = (text) =>
+  text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+
+// Text Transformations
+// the following functions transform the given strings to match the regex command
+type ModifyText = (text: string) => string;
+type CombineText = (
+  text: string,
+  newText: string | TextObject,
+  ...extra: (string | TextObject)[]
+) => string;
+type SetFrequency = (text: string, amount: number) => string;
+type SetRange = (text: string, min: number, max: number) => string;
+
+// receieve string or TextObject and format text accordingly
+type ParseText = (text: string | TextObject) => string;
+const parseText: ParseText = (text) =>
+  typeof text === "string" ? formatRegex(text) : text.text;
+
+// wrap args in parseText function to handle different data types
+type TextParsingHOF = (func: CombineText) => CombineText;
+const withTextParsing: TextParsingHOF = (func) => (text, newText, ...extra) => {
+  const parsedNewText = parseText(newText);
+  const parsedExtra = extra.map(parseText);
+  return func(text, parsedNewText, ...parsedExtra);
+};
+
+const or = withTextParsing((text, newText, ...extra) =>
+  [text, newText, ...extra].join("|")
+);
+
+const then = withTextParsing((text, newText, ...extra) =>
+  [text, newText, ...extra].join(",")
+);
+
+const isOptional: ModifyText = (text) => `${text}?`; // add grouping?
+
+const occurs: SetFrequency = (text, amount) => `${text}{${amount}}`;
+const doesNotOccur: ModifyText = (text) => `[^${text}]`;
+const occursAtLeast: SetFrequency = (text, min) => `${text}{${min},}`;
+const occursOnceOrMore: ModifyText = (text) => `${text}+`;
+const occursZeroOrMore: ModifyText = (text) => `${text}*`;
+const occursBetween: SetRange = (text, min, max) => `${text}{${min},${max}}`;
+
+const followedBy = withTextParsing(
+  (text, following, ...extra) =>
+    `${text}${[following, ...extra].map((x) => `(?=${x})`).join("")}`
+); // grouping still work?
+
+const notFollowedBy = withTextParsing(
+  (text, notFollowing, ...extra) =>
+    `${text}${[notFollowing, ...extra].map((x) => `(?!${x})`).join("")}`
+);
+
+const precededBy = withTextParsing(
+  (text, preceding, ...extra) =>
+    `${[preceding, ...extra].map((x) => `(?<=${x})`).join("")}${text}`
+);
+
+const notPrecededBy = withTextParsing(
+  (text, notPreceding, ...extra) =>
+    `${[notPreceding, ...extra].map((x) => `(?<!${x})`).join("")}${text}`
+);
+
+const isCaptured: ModifyText = (text) => `(${text})`;
+const atStart: ModifyText = (text) => `^${text}`; // careful of grouping
+const atEnd: ModifyText = (text) => `${text}$`; // careful of grouping;
+
+// keys
+// keys are used to track which pathways are still viable when generating the declarative syntax object
+// keys passed to the removeKeys variable will be removed from the current object
+// Define keyNames used to check against when removing already used keys
+const orKey = "orKey";
+const thenKey = "thenKey";
+const anyOccursKey = "anyOccursKey";
+const followedByKey = "followedByKey";
+const notFollowedByKey = "notFollowedByKey";
+const precededByKey = "precededByKey";
+const notPrecededByKey = "notPrecededByKey";
+const atStartKey = "atStartKey";
+const atEndKey = "atEndKey";
+const isOptionalKey = "isOptionalKey";
+const isCapturedKey = "isCapturedKey";
+// useRef?
+
+// Dynamic Object Pathways
+
+type BuildRGX = (baseText: string, removeKeys: string[]) => RGXUnit; //specify recursive type?
+
+type ModifyTextRGX = () => RGXUnit;
+type CombineTextRGX = (
+  newText: string | TextObject,
+  ...extra: (string | TextObject)[]
+) => RGXUnit;
+type SetFrequencyRGX = (amount: number) => RGXUnit;
+type SetRangeRGX = (min: number, max: number) => RGXUnit;
+
+interface RGXUnit {
+  text: string;
+  escaped: boolean;
+  or?: CombineTextRGX;
+  then?: CombineTextRGX;
+  occurs?: SetFrequencyRGX;
+  doesNotOccur?: ModifyTextRGX;
+  occursAtLeast?: SetFrequencyRGX;
+  occursOnceOrMore?: ModifyTextRGX;
+  occursZeroOrMore?: ModifyTextRGX;
+  occursBetween?: SetRangeRGX;
+  followedBy?: CombineTextRGX;
+  notFollowedBy?: CombineTextRGX;
+  precededBy?: CombineTextRGX;
+  notPrecededBy?: CombineTextRGX;
+  atStart?: ModifyTextRGX;
+  atEnd?: ModifyTextRGX;
+  isOptional?: ModifyTextRGX;
+  isCaptured?: ModifyTextRGX;
+  // useRef?
+}
+
+const validateKey = (removeKeys: string[]) => (key: string) =>
+  !removeKeys.includes(key);
+const buildRGX: BuildRGX = (baseText, removeKeys) => {
+  const validate = validateKey(removeKeys);
+  return {
+    text: baseText,
+    escaped: true,
+    //...validate(orKey) && {or: initWith2Args(or, orKey)(baseText, removeKeys) },
+    ...(validate(orKey) && { or: initOr(baseText, removeKeys) }),
+    //...validate(orKey) && {or3: (newText, ...extra) => continue(or(baseText, newText, ...extra), [orKey,...removeKeys]) }
+    ...(validate(thenKey) && { then: initThen(baseText, removeKeys) }),
+    ...(validate(anyOccursKey) && { occurs: initOccurs(baseText, removeKeys) }),
+    ...(validate(anyOccursKey) && {
+      doesNotOccur: initDoesNotOccur(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursAtLeast: initOccursAtLeast(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursOnceOrMore: initOccursOnceOrMore(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursZeroOrMore: initOccursZeroOrMore(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursBetween: initOccursBetween(baseText, removeKeys),
+    }),
+    ...(validate(followedByKey) && {
+      followedBy: initFollowedBy(baseText, removeKeys),
+    }),
+    ...(validate(notFollowedByKey) && {
+      notFollowedBy: initNotFollowedBy(baseText, removeKeys),
+    }),
+    ...(validate(precededByKey) && {
+      precededBy: initPrecededBy(baseText, removeKeys),
+    }),
+    ...(validate(notPrecededByKey) && {
+      notPrecededBy: initNotPrecededBy(baseText, removeKeys),
+    }),
+    ...(validate(atStartKey) && { atStart: initAtStart(baseText, removeKeys) }),
+    ...(validate(atEndKey) && { atEnd: initAtEnd(baseText, removeKeys) }),
+    ...(validate(isOptionalKey) && {
+      isOptional: initIsOptional(baseText, removeKeys),
+    }),
+    ...(validate(isCapturedKey) && {
+      isCaptured: initIsCaptured(baseText, removeKeys),
+    }),
+  };
+};
+
+const init = (text: string | TextObject) => buildRGX(parseText(text), []); // starting point
+
+type InitCombineText = (
+  func: CombineText,
+  key: string
+) => (
+  baseText: string,
+  removeKeys: string[]
+) => (
+  newText: string | TextObject,
+  ...extra: (string | TextObject)[]
+) => RGXUnit;
+const initCombineText: InitCombineText = (func, key) => (
+  baseText,
+  removeKeys
+) => (newText, ...extra) =>
+  buildRGX(func(baseText, newText, ...extra), [key, ...removeKeys]);
+const initOr = initCombineText(or, orKey);
+const initThen = initCombineText(then, thenKey);
+const initFollowedBy = initCombineText(followedBy, followedByKey);
+const initNotFollowedBy = initCombineText(notFollowedBy, notFollowedByKey);
+const initPrecededBy = initCombineText(precededBy, precededByKey);
+const initNotPrecededBy = initCombineText(notPrecededBy, notPrecededByKey);
+
+type InitSetRange = (
+  func: SetRange,
+  key: string
+) => (
+  baseText: string,
+  removeKeys: string[]
+) => (min: number, max: number) => RGXUnit;
+const initSetRange: InitSetRange = (func, key) => (baseText, removeKeys) => (
+  min,
+  max
+) => buildRGX(func(baseText, min, max), [key, ...removeKeys]);
+const initOccursBetween = initSetRange(occursBetween, anyOccursKey);
+
+type InitSetFrequency = (
+  func: SetFrequency,
+  key: string
+) => (baseText: string, removeKeys: string[]) => (amount: number) => RGXUnit;
+const initSetFrequency: InitSetFrequency = (func, key) => (
+  baseText,
+  removeKeys
+) => (amount) => buildRGX(func(baseText, amount), [key, ...removeKeys]);
+const initOccurs = initSetFrequency(occurs, anyOccursKey);
+const initOccursAtLeast = initSetFrequency(occursAtLeast, anyOccursKey);
+
+type InitModifyText = (
+  func: ModifyText,
+  key: string
+) => (baseText: string, removeKeys: string[]) => () => RGXUnit;
+const initModifyText: InitModifyText = (func, key) => (
+  baseText,
+  removeKeys
+) => () => buildRGX(func(baseText), [key, ...removeKeys]);
+const initDoesNotOccur = initModifyText(doesNotOccur, anyOccursKey);
+const initOccursOnceOrMore = initModifyText(occursOnceOrMore, anyOccursKey);
+const initOccursZeroOrMore = initModifyText(occursZeroOrMore, anyOccursKey);
+const initAtStart = initModifyText(atStart, atStartKey);
+const initAtEnd = initModifyText(atEnd, atEndKey);
+const initIsOptional = initModifyText(isOptional, isOptionalKey);
+const initIsCaptured = initModifyText(isCaptured, isCapturedKey);
+
+// set up presets - anyLetter, etc.
+
+// format presets for parsing with RGXBuild constructor
+type CreateTextObj = (text: string) => TextObject;
+const createTextObj: CreateTextObj = (text) => ({
+  text,
+  escaped: true,
+});
+
+///////////////////////////
+// rgx text collections //
+//////////////////////////
 
 // matches a single character for any possible character
-export const anyCharacter = "."; // correct when in set []?
+export const anyCharacter = createTextObj("."); // correct when in set []?
 // match newLine?
 
 // matches a single character for any number 0 through 9
-export const anyDigit = "[0123456789]";
+export const anyDigit = createTextObj("[0123456789]");
 
 // matches a single character for any lowercase letter
-export const anyLowerCase = "[abcdefghijklmnopqrstuvwxyz]";
+export const anyLowerCase = createTextObj("[abcdefghijklmnopqrstuvwxyz]");
 
 // matches a single character for any uppercase letter
-export const anyUpperCase = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]";
+export const anyUpperCase = createTextObj("[ABCDEFGHIJKLMNOPQRSTUVWXYZ]");
 
 // matches a single character for any possible letter, lower or upper case
-export const anyLetter =
-  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]";
+export const anyLetter = createTextObj(
+  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]"
+);
 
 // matches a single character for any special character that must be escaped
 // eslint-disable-next-line no-useless-escape
@@ -54,14 +309,6 @@ const combineSets = (...sets: string[]) => {
   const combination = sets.join("").replace(/[[\]]/g, "");
   return `[${combination}]`;
 };
-
-// check later
-export const formatRegex = (text: string): string =>
-  text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
-
-//
-// --return above collections with specified characters removed-- //
-//
 
 // HOF for removing from digits collection, taking string or number args
 type RemoveDigits = (x: string) => (...y: (string | number)[]) => string;
@@ -104,43 +351,19 @@ export const upperOrLower = (letter: string): string => {
   return `[${lowerCase}${upperCase}]`;
 };
 
-export const either = (...texts: string[]): string => texts.join("|"); // add testing, need ()?
-
-type RegexConvert = (x: string) => string;
-export const startsWith: RegexConvert = (startingText) => `^(${startingText})`;
-export const endsWith: RegexConvert = (endingText) => `(${endingText})$`;
-
-/////// FREQUENCY
-type Frequency = (x: string, y: number, z?: number) => string;
-export const oneOrMore: RegexConvert = (text) => `(${text})+`;
-export const zeroOrMore: RegexConvert = (text) => `(${text})*`;
-export const repeating: Frequency = (text, counter) => `(${text}){${counter}}`;
-export const minMax: Frequency = (text, min, max) => `(${text}){${min},${max}}`;
-export const atLeast: Frequency = (text, min) => `(${text}){${min},}`;
-// lazy match for minimal = +?, *?, etc. page 49
-// lazy by default?
-//"< test < some > more >".replace(/<.+?>/, "")
-// text.length > 1 && text.match(/^\(.+\)$/) check for
-export const optional: RegexConvert = (text) => `(${text})?`;
+// set up common searches - ssn, email, etc.
+// set up variable units - (<title>...)<title>
+// withAnd
+// lazy vs greedy settings
+// apply groupings - careful
+// rgx construct
+// rgx deconstruct - optional
 
 // conditionally applied non-capturing grouping when appropriate
+
+// extras from before
 const applyGrouping = (text: string) =>
   text.length > 1 && /^[^(].+[^)]$/.test(text) ? `(?:${text})` : text;
-
-/////// POSITIONING
-
-const lookAhead = (target: string, followedBy: string) =>
-  `${target}(?=${followedBy})`;
-const negateLookAhead = (target: string, notFollowedBy: string) =>
-  `${target}(?!${notFollowedBy})`;
-const lookBehind = (target: string, precededBy: string) =>
-  `(?<=${precededBy})${target}`;
-const negateLookBehind = (target: string, notPrecededBy: string) =>
-  `(?<!${notPrecededBy})${target}`;
-
-const capture = (text: string) => `(${text})`; // capture lookahed/ behind?
-
-///// BackReference
 
 const reference = (text: string) => ({
   text,
@@ -148,161 +371,5 @@ const reference = (text: string) => ({
   key: uniqid(),
 });
 
-/*const construct = (...textUnits) => {
-    const textObj = textUnits.filter(x => typeof x === "object");
-    if (textObj.length > 0) {
-
-    }
-}
-*/
-
-const init = (text: string) => ({
-  text, // handle grouping automatically? handle escaping?
-  or: (...textOptions: string[]) => init([text, ...textOptions].join("|")), // only at text initialization, focus on small rgx units
-  and: (...textOptions: string[]) => init([text, ...textOptions].join("")), // only at text initialization, focus on small rgx units
-  followedBy: (after: string) => init(`${text}(?=${after})`),
-  notFollowedBy: (after: string) => init(`${text}(?!${after})`),
-  precededBy: (before: string) => init(`(?<=${before})${text}`),
-  notPrecededBy: (before: string) => init(`(?<!${before})${text}`),
-  isOptional: () => init(`${text}?`),
-  isCaptured: () => init(`(${text})`), // apply conditionally
-  occurs: (frequency: number) => init(`${text}{${frequency}}`),
-  occursOnceOrMore: () => init(`${text}+`),
-  occursZeroOrMore: () => init(`${text}*`),
-  occursAtLeast: (min: number) => init(`${text}{${min},}`),
-  occursBetween: (min: number, max: number) => init(`${text}{${min}, ${max}}`),
-  doesNotOccur: () => init(`[^${text}]`), // will [^[abc]] work?
-  asReference: "",
-  useReference: "",
-  atStart: () => init(`^${text}`),
-  atEnd: () => init(`${text}$`), // final option, no init needed, just obj w text
-}); // startsWith, endsWith
-
-const createReference = () => ""; // 3 parts - init(unit), ref(var), construct( compose units, possibly including vars)
-
-///// restructuring begins below:
-
-/* regex test transformations */
-type AddText = (
-  prevText: string,
-  newText: string,
-  ...extraText: string[]
-) => string; // conversion for numbers?
-type ModifyText = (text: string) => string;
-//type UpdateTextAndNumbers = (...text: (string| number)[]) => string;
-type UpdateFrequency = (text: string, amount: number) => string;
-type UpdateRange = (text: string, min: number, max: number) => string;
-
-const or: AddText = (previousText, ...text) =>
-  [previousText, ...text].join("|"); // rename either
-const and: AddText = (previousText, ...text) =>
-  [previousText, ...text].join(","); // rename alongWith;
-const isOptional: ModifyText = (text) => `${text}?`; // add grouping?
-const occurs: UpdateFrequency = (text, amount) => `${text}{${amount}}`;
-const doesNotOccur: ModifyText = (text) => `[^${text}]`;
-const occursAtLeast: UpdateFrequency = (text, min) => `${text}{${min},}`;
-const occursOnceOrMore: ModifyText = (text) => `${text}+`;
-const occursZeroOrMore: ModifyText = (text) => `${text}*`;
-const occursBetween: UpdateRange = (text, min, max) => `${text}{${min},${max}}`;
-const followedBy: AddText = (target, following) => `${target}(?=${following})`;
-const notFollowedBy: AddText = (target, notFollowing) =>
-  `${target}(?!${notFollowing})`;
-const precededBy: AddText = (target, preceding) => `(?<=${preceding})${target}`;
-const notPrecededBy: AddText = (target, notPreceding) =>
-  `(?<!${notPreceding})${target}`;
-const isCaptured: ModifyText = (text) => `(${text})`;
-const atStart: ModifyText = (text) => `^${text}`; // careful of grouping
-const atEnd: ModifyText = (text) => `${text}$`; // careful of grouping;
-
-/* object pathways */
-
-//use interface to simplify?
-type ModifyString = () => rgxInit; //string;
-type AddToString = (text: string, ...extraText: string[]) => rgxInit; //string;
-type SetFrequency = (amount: number) => rgxInit; //string;
-type SetRange = (min: number, max: number) => rgxInit; //string;
-/*
-interface rgxTextModify
-interface rgxContinue
-interface rgxBehaviorModify
-interface rgxEnd
-interface rgxMixed
-*/
-interface rgxInit {
-  text: string;
-  or: AddToString;
-  and: AddToString;
-  followedBy: AddToString;
-  notFollowedBy: AddToString;
-  precededBy: AddToString;
-  notPrecededBy: AddToString;
-  isOptional: ModifyString;
-  isCaptured: ModifyString;
-  occurs: SetFrequency;
-  doesNotOccur: ModifyString;
-  occursOnceOrMore: ModifyString;
-  occursZeroOrMore: ModifyString;
-  occursAtLeast: SetFrequency;
-  occursBetween: SetRange;
-  atStart: ModifyString;
-  atEnd: ModifyString;
-  //useRef
-}
-
-const createRGX = (text: string) => {
-  const rgxObj: rgxInit = {
-    text,
-    or: (...orText) => createRGX(or(text, ...orText)), // init new obj
-    and: (...andText) => createRGX(and(text, ...andText)),
-    followedBy: (...following) =>
-      createRGX(`${text}${following.map((x) => `(?=${x})`).join("")}`),
-    notFollowedBy: (...notFollowing) =>
-      createRGX(`${text}${notFollowing.map((x) => `(?!${x})`).join("")}`),
-    precededBy: (...preceding) =>
-      createRGX(`${preceding.map((x) => `(?<=${x})`).join("")}${text}`),
-    notPrecededBy: (...notPreceding) =>
-      createRGX(`${notPreceding.map((x) => `(?<!${x})`).join("")}${text}`),
-    isOptional: () => createRGX(isOptional(text)),
-    isCaptured: () => createRGX(isCaptured(text)),
-    occurs: (amount) => createRGX(occurs(text, amount)),
-    doesNotOccur: () => createRGX(doesNotOccur(text)),
-    occursOnceOrMore: () => createRGX(occursOnceOrMore(text)),
-    occursZeroOrMore: () => createRGX(occursZeroOrMore(text)),
-    occursAtLeast: (amount) => createRGX(occursAtLeast(text, amount)),
-    occursBetween: (min, max) => createRGX(occursBetween(text, min, max)),
-    atStart: () => createRGX(atStart(text)),
-    atEnd: () => createRGX(atEnd(text)),
-    //useRef
-  };
-  return rgxObj;
-};
-//createRGX("hi").or()
-
-const sampleInit = (text: string) => ({
-  text, // handle grouping automatically? handle escaping?
-  or: (newText: string, ...textOptions: string[]) =>
-    init(or(text, newText, ...textOptions)), // only at text initialization, focus on small rgx units
-  and: (...textOptions: string[]) => init([text, ...textOptions].join("")), // only at text initialization, focus on small rgx units
-  followedBy: (after: string) => init(`${text}(?=${after})`),
-  notFollowedBy: (after: string) => init(`${text}(?!${after})`),
-  precededBy: (before: string) => init(`(?<=${before})${text}`),
-  notPrecededBy: (before: string) => init(`(?<!${before})${text}`),
-  isOptional: () => init(`${text}?`),
-  isCaptured: () => init(`(${text})`), // apply conditionally
-  occurs: (frequency: number) => init(`${text}{${frequency}}`),
-  occursOnceOrMore: () => init(`${text}+`),
-  occursZeroOrMore: () => init(`${text}*`),
-  occursAtLeast: (min: number) => init(`${text}{${min},}`),
-  occursBetween: (min: number, max: number) => init(`${text}{${min}, ${max}}`),
-  doesNotOccur: () => init(`[^${text}]`), // will [^[abc]] work?
-  asReference: "",
-  useReference: "",
-  atStart: () => init(`^${text}`),
-  atEnd: () => init(`${text}$`), // final option, no init needed, just obj w text
-});
-
-/* rgx construction functions */
-
-/* text collections */
-
-/* preset regex */
+const withAnd = (expression) => ({ and: expression }); // use lazyload?
+// when accepting rgx unit, will need to check for string (and escape it) or grab unit.text
