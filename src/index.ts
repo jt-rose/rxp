@@ -305,44 +305,37 @@ const nonWordBoundary = "B"; // better name, used in js?
 
 const anyHexadecimal = "[abcdefABCDEF0123456789]";
 
-const combineSets = (...sets: string[]) => {
-  const combination = sets.join("").replace(/[[\]]/g, "");
-  return `[${combination}]`;
-};
-
 // HOF for removing from digits collection, taking string or number args
-type RemoveDigits = (x: string) => (...y: (string | number)[]) => string;
-const removeDigitsFromStringTemplate: RemoveDigits = (regexOptions) => (
-  ...exceptions
-) => {
+type RemoveDigits = (
+  x: TextObject
+) => (...y: (string | number)[]) => TextObject;
+const removeDigits: RemoveDigits = (rgxPreset) => (...exceptions) => {
   const textVersion = exceptions.map((x) =>
     typeof x === "string" ? x : String(x)
   );
   const textToRemove = `[${textVersion.join("")}]`;
   const removalRegex = new RegExp(textToRemove, "g");
 
-  return regexOptions.replace(removalRegex, "");
+  return createTextObj(rgxPreset.text.replace(removalRegex, ""));
 };
 
 // HOF for removing from different collections
-type RemoveText = (x: string) => (...y: string[]) => string;
-const removeTextFromStringTemplate: RemoveText = (regexOptions) => (
-  ...exceptions
-) => {
+type RemoveText = (x: TextObject) => (...y: string[]) => TextObject;
+const removeText: RemoveText = (rgxPreset) => (...exceptions) => {
   const textToRemove = `[${exceptions.join("")}]`;
   const removalRegex = new RegExp(textToRemove, "g");
 
-  return regexOptions.replace(removalRegex, "");
+  return createTextObj(rgxPreset.text.replace(removalRegex, ""));
 };
 
 // generate 'except' functions to return filtered collections
 export const anyCharacterExcept = (...args: (string | number)[]): string =>
   `[^${args.map((x) => String(x)).join("")}]`; /// check later
 
-export const anyDigitExcept = removeDigitsFromStringTemplate(anyDigit);
-export const anyLowerCaseExcept = removeTextFromStringTemplate(anyLowerCase);
-export const anyUpperCaseExcept = removeTextFromStringTemplate(anyUpperCase);
-export const anyLetterExcept = removeTextFromStringTemplate(anyLetter);
+export const anyDigitExcept = removeDigits(anyDigit);
+export const anyLowerCaseExcept = removeText(anyLowerCase);
+export const anyUpperCaseExcept = removeText(anyUpperCase);
+export const anyLetterExcept = removeText(anyLetter);
 
 // return letter as option for either upper or lower case
 export const upperOrLower = (letter: string): string => {
