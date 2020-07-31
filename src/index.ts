@@ -1,86 +1,8 @@
 import uniqid from "uniqid";
 
-//
+/*
 
-// Text Objects
-// user-submitted strings will be formatted to escape special characters
-// already formatted strings will be stored in text objects to distinguish them
-// a combination of user-strings and text objects can be submitted to text-transformation functions
-// so these will be parsed before running the function
 
-interface TextObject {
-  text: string;
-  escaped: boolean;
-}
-
-// format user-submitted strings to escape special characters
-export const formatRegex: ModifyText = (text) =>
-  text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
-
-// Text Transformations
-// the following functions transform the given strings to match the regex command
-type ModifyText = (text: string) => string;
-type CombineText = (
-  text: string,
-  newText: string | TextObject,
-  ...extra: (string | TextObject)[]
-) => string;
-type SetFrequency = (text: string, amount: number) => string;
-type SetRange = (text: string, min: number, max: number) => string;
-
-// receieve string or TextObject and format text accordingly
-type ParseText = (text: string | TextObject) => string;
-const parseText: ParseText = (text) =>
-  typeof text === "string" ? formatRegex(text) : text.text;
-
-// wrap args in parseText function to handle different data types
-type TextParsingHOF = (func: CombineText) => CombineText;
-const withTextParsing: TextParsingHOF = (func) => (text, newText, ...extra) => {
-  const parsedNewText = parseText(newText);
-  const parsedExtra = extra.map(parseText);
-  return func(text, parsedNewText, ...parsedExtra);
-};
-
-const or = withTextParsing((text, newText, ...extra) =>
-  [text, newText, ...extra].join("|")
-);
-
-const then = withTextParsing((text, newText, ...extra) =>
-  [text, newText, ...extra].join(",")
-);
-
-const isOptional: ModifyText = (text) => `${text}?`; // add grouping?
-
-const occurs: SetFrequency = (text, amount) => `${text}{${amount}}`;
-const doesNotOccur: ModifyText = (text) => `[^${text}]`;
-const occursAtLeast: SetFrequency = (text, min) => `${text}{${min},}`;
-const occursOnceOrMore: ModifyText = (text) => `${text}+`;
-const occursZeroOrMore: ModifyText = (text) => `${text}*`;
-const occursBetween: SetRange = (text, min, max) => `${text}{${min},${max}}`;
-
-const followedBy = withTextParsing(
-  (text, following, ...extra) =>
-    `${text}${[following, ...extra].map((x) => `(?=${x})`).join("")}`
-); // grouping still work?
-
-const notFollowedBy = withTextParsing(
-  (text, notFollowing, ...extra) =>
-    `${text}${[notFollowing, ...extra].map((x) => `(?!${x})`).join("")}`
-);
-
-const precededBy = withTextParsing(
-  (text, preceding, ...extra) =>
-    `${[preceding, ...extra].map((x) => `(?<=${x})`).join("")}${text}`
-);
-
-const notPrecededBy = withTextParsing(
-  (text, notPreceding, ...extra) =>
-    `${[notPreceding, ...extra].map((x) => `(?<!${x})`).join("")}${text}`
-);
-
-const isCaptured: ModifyText = (text) => `(${text})`;
-const atStart: ModifyText = (text) => `^${text}`; // careful of grouping
-const atEnd: ModifyText = (text) => `${text}$`; // careful of grouping;
 
 // keys
 // keys are used to track which pathways are still viable when generating the declarative syntax object
@@ -134,8 +56,86 @@ interface RGXUnit {
   // any
 }
 
+// the rgx constructor follows...
+const createStep5 = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        text: baseText,
+        escaped: true,
+        ...(validate(isOptionalKey) && {
+            isOptional: initIsOptional(baseText, removeKeys),
+          }),
+          ...(validate(isCapturedKey) && {
+            isCaptured: initIsCaptured(baseText, removeKeys),
+          }),
+    }
+};
+
+const createStep4AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(atStartKey) && { atStart: initAtStart(baseText, removeKeys) }),
+    ...(validate(atEndKey) && { atEnd: initAtEnd(baseText, removeKeys) }),
+    ...createStep5(baseText, removeKeys)
+    }
+};
+
+const createStep3AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(followedByKey) && {
+            followedBy: initFollowedBy(baseText, removeKeys),
+          }),
+          ...(validate(notFollowedByKey) && {
+            notFollowedBy: initNotFollowedBy(baseText, removeKeys),
+          }),
+          ...(validate(precededByKey) && {
+            precededBy: initPrecededBy(baseText, removeKeys),
+          }),
+          ...(validate(notPrecededByKey) && {
+            notPrecededBy: initNotPrecededBy(baseText, removeKeys),
+          }),
+    ...createStep4AndAbove(baseText, removeKeys)
+    }
+};
+
+const createStep2AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(anyOccursKey) && { occurs: initOccurs(baseText, removeKeys) }),
+        ...(validate(anyOccursKey) && {
+          doesNotOccur: initDoesNotOccur(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursAtLeast: initOccursAtLeast(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursOnceOrMore: initOccursOnceOrMore(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursZeroOrMore: initOccursZeroOrMore(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursBetween: initOccursBetween(baseText, removeKeys),
+        }),
+    ...createStep3AndAbove(baseText, removeKeys)
+    }
+};
+
+const createStep1AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(orKey) && { or: initOr(baseText, removeKeys) }),
+    //...validate(orKey) && {or3: (newText, ...extra) => continue(or(baseText, newText, ...extra), [orKey,...removeKeys]) }
+    ...(validate(thenKey) && { then: initThen(baseText, removeKeys) }),
+    ...createStep2AndAbove(baseText, removeKeys)
+    }
+};
+
+
 const validateKey = (removeKeys: string[]) => (key: string) =>
   !removeKeys.includes(key);
+
 const buildRGX: BuildRGX = (baseText, removeKeys) => {
   const validate = validateKey(removeKeys);
   return {
@@ -248,6 +248,7 @@ const initAtEnd = initModifyText(atEnd, atEndKey);
 const initIsOptional = initModifyText(isOptional, isOptionalKey);
 const initIsCaptured = initModifyText(isCaptured, isCapturedKey);
 
+// avoid () call when no args needed
 // set up common searches - ssn, email, etc.
 // set up variable units - (<title>...)<title>
 // withAnd
@@ -270,3 +271,4 @@ const reference = (text: string) => ({
 
 const withAnd = (expression) => ({ and: expression }); // use lazyload?
 // when accepting rgx unit, will need to check for string (and escape it) or grab unit.text
+*/

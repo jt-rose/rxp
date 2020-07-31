@@ -1,108 +1,274 @@
 "use strict";
-// note: assume user not writing regex, but literals, so . is a period, not any
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.optional = exports.atLeast = exports.minMax = exports.repeating = exports.zeroOrMore = exports.oneOrMore = exports.endsWith = exports.startsWith = exports.either = exports.upperOrLower = exports.anyLetterExcept = exports.anyUpperCaseExcept = exports.anyLowerCaseExcept = exports.anyDigitExcept = exports.anyCharacterExcept = exports.formatRegex = exports.nonPrint = exports.anySpecChar = exports.anyLetter = exports.anyUpperCase = exports.anyLowerCase = exports.anyDigit = exports.anyCharacter = void 0;
-// --collection of character types-- //
-// matches a single character for any possible character
-exports.anyCharacter = "."; // correct when in set []?
-// match newLine?
-// matches a single character for any number 0 through 9
-exports.anyDigit = "[0123456789]";
-// matches a single character for any lowercase letter
-exports.anyLowerCase = "[abcdefghijklmnopqrstuvwxyz]";
-// matches a single character for any uppercase letter
-exports.anyUpperCase = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]";
-// matches a single character for any possible letter, lower or upper case
-exports.anyLetter = "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]";
-// matches a single character for any special character that must be escaped
-// eslint-disable-next-line no-useless-escape
-exports.anySpecChar = /[.*+\-?^${}()|[\]\\]/; //"[.*+-?^${}()|[\]\\]";
-var anyTextFormat = "[!&()_-;:'\",.<>?]";
-var anyOther = "[`~!@#$%^&*()-_=+[]|{};:'\",<.>/?\\]"; // just use except with both letters and digits?
-exports.nonPrint = {
-    // rename 'whitespace'? // add testing
-    backspace: "[\b]",
-    formFeed: "\f",
-    lineFeed: "\n",
-    carriageReturn: "\r",
-    tab: "\t",
-    verticalTab: "\v",
+/*
+
+
+
+// keys
+// keys are used to track which pathways are still viable when generating the declarative syntax object
+// keys passed to the removeKeys variable will be removed from the current object
+// Define keyNames used to check against when removing already used keys
+const orKey = "orKey";
+const thenKey = "thenKey";
+const anyOccursKey = "anyOccursKey";
+const followedByKey = "followedByKey";
+const notFollowedByKey = "notFollowedByKey";
+const precededByKey = "precededByKey";
+const notPrecededByKey = "notPrecededByKey";
+const atStartKey = "atStartKey";
+const atEndKey = "atEndKey";
+const isOptionalKey = "isOptionalKey";
+const isCapturedKey = "isCapturedKey";
+// useRef?
+
+// Dynamic Object Pathways
+
+type BuildRGX = (baseText: string, removeKeys: string[]) => RGXUnit; //specify recursive type?
+
+type ModifyTextRGX = () => RGXUnit;
+type CombineTextRGX = (
+  newText: string | TextObject,
+  ...extra: (string | TextObject)[]
+) => RGXUnit;
+type SetFrequencyRGX = (amount: number) => RGXUnit;
+type SetRangeRGX = (min: number, max: number) => RGXUnit;
+
+interface RGXUnit {
+  text: string;
+  escaped: boolean;
+  or?: CombineTextRGX;
+  then?: CombineTextRGX;
+  occurs?: SetFrequencyRGX;
+  doesNotOccur?: ModifyTextRGX;
+  occursAtLeast?: SetFrequencyRGX;
+  occursOnceOrMore?: ModifyTextRGX;
+  occursZeroOrMore?: ModifyTextRGX;
+  occursBetween?: SetRangeRGX;
+  followedBy?: CombineTextRGX;
+  notFollowedBy?: CombineTextRGX;
+  precededBy?: CombineTextRGX;
+  notPrecededBy?: CombineTextRGX;
+  atStart?: ModifyTextRGX;
+  atEnd?: ModifyTextRGX;
+  isOptional?: ModifyTextRGX;
+  isCaptured?: ModifyTextRGX;
+  // useRef?
+  // any
+}
+
+// the rgx constructor follows...
+const createStep5 = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        text: baseText,
+        escaped: true,
+        ...(validate(isOptionalKey) && {
+            isOptional: initIsOptional(baseText, removeKeys),
+          }),
+          ...(validate(isCapturedKey) && {
+            isCaptured: initIsCaptured(baseText, removeKeys),
+          }),
+    }
 };
-var backspace = "[\b]";
-var formFeed = "[\f]";
-var lineFeed = "[\n]";
-var carriageReturn = "[\r]";
-var tab = "[\t]";
-var verticalTab = "[\v]";
-var anyHexadecimal = "[abcdefABCDEF0123456789]";
-var combineSets = function () {
-    var sets = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        sets[_i] = arguments[_i];
+
+const createStep4AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(atStartKey) && { atStart: initAtStart(baseText, removeKeys) }),
+    ...(validate(atEndKey) && { atEnd: initAtEnd(baseText, removeKeys) }),
+    ...createStep5(baseText, removeKeys)
     }
-    var combination = sets.join("").replace(/[[\]]/g, "");
-    return "[" + combination + "]";
 };
-// func to generate [] options submitted by user
-// check later
-exports.formatRegex = function (text) {
-    return text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
-}; // $& means the whole matched string
-var removeDigitsFromStringTemplate = function (regexOptions) { return function () {
-    var exceptions = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        exceptions[_i] = arguments[_i];
+
+const createStep3AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(followedByKey) && {
+            followedBy: initFollowedBy(baseText, removeKeys),
+          }),
+          ...(validate(notFollowedByKey) && {
+            notFollowedBy: initNotFollowedBy(baseText, removeKeys),
+          }),
+          ...(validate(precededByKey) && {
+            precededBy: initPrecededBy(baseText, removeKeys),
+          }),
+          ...(validate(notPrecededByKey) && {
+            notPrecededBy: initNotPrecededBy(baseText, removeKeys),
+          }),
+    ...createStep4AndAbove(baseText, removeKeys)
     }
-    var textVersion = exceptions.map(function (x) {
-        return typeof x === "string" ? x : String(x);
-    });
-    var textToRemove = "[" + textVersion.join("") + "]";
-    var removalRegex = new RegExp(textToRemove, "g");
-    return regexOptions.replace(removalRegex, "");
-}; };
-var removeTextFromStringTemplate = function (regexOptions) { return function () {
-    var exceptions = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        exceptions[_i] = arguments[_i];
-    }
-    var textToRemove = "[" + exceptions.join("") + "]";
-    var removalRegex = new RegExp(textToRemove, "g");
-    return regexOptions.replace(removalRegex, "");
-}; };
-// generate 'except' functions to return filtered collections
-exports.anyCharacterExcept = function () {
-    var args = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i] = arguments[_i];
-    }
-    return "[^" + args.map(function (x) { return String(x); }).join("") + "]";
-}; /// check later
-exports.anyDigitExcept = removeDigitsFromStringTemplate(exports.anyDigit);
-exports.anyLowerCaseExcept = removeTextFromStringTemplate(exports.anyLowerCase);
-exports.anyUpperCaseExcept = removeTextFromStringTemplate(exports.anyUpperCase);
-exports.anyLetterExcept = removeTextFromStringTemplate(exports.anyLetter);
-// return letter as option for either upper or lower case
-exports.upperOrLower = function (letter) {
-    var lowerCase = letter.toLowerCase();
-    var upperCase = letter.toUpperCase();
-    return "[" + lowerCase + upperCase + "]";
 };
-exports.either = function () {
-    var texts = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        texts[_i] = arguments[_i];
+
+const createStep2AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(anyOccursKey) && { occurs: initOccurs(baseText, removeKeys) }),
+        ...(validate(anyOccursKey) && {
+          doesNotOccur: initDoesNotOccur(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursAtLeast: initOccursAtLeast(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursOnceOrMore: initOccursOnceOrMore(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursZeroOrMore: initOccursZeroOrMore(baseText, removeKeys),
+        }),
+        ...(validate(anyOccursKey) && {
+          occursBetween: initOccursBetween(baseText, removeKeys),
+        }),
+    ...createStep3AndAbove(baseText, removeKeys)
     }
-    return texts.join("|");
-}; // add testing, need ()?
-exports.startsWith = function (startingText) { return "^(" + startingText + ")"; };
-exports.endsWith = function (endingText) { return "(" + endingText + ")$"; };
-exports.oneOrMore = function (text) { return "(" + text + ")+"; };
-exports.zeroOrMore = function (text) { return "(" + text + ")*"; };
-exports.repeating = function (text, counter) { return "(" + text + "){" + counter + "}"; };
-exports.minMax = function (text, min, max) { return "(" + text + "){" + min + "," + max + "}"; };
-exports.atLeast = function (text, min) { return "(" + text + "){" + min + ",}"; };
-// lazy match for minimal = +?, *?, etc. page 49
-// lazy by default?
-//"< test < some > more >".replace(/<.+?>/, "")
-exports.optional = function (text) { return "(" + text + ")?"; };
-/////// POSITIONING
+};
+
+const createStep1AndAbove = (baseText: string, removeKeys: string[]) => {
+    const validate = validateKey(removeKeys);
+    return { // add and
+        ...(validate(orKey) && { or: initOr(baseText, removeKeys) }),
+    //...validate(orKey) && {or3: (newText, ...extra) => continue(or(baseText, newText, ...extra), [orKey,...removeKeys]) }
+    ...(validate(thenKey) && { then: initThen(baseText, removeKeys) }),
+    ...createStep2AndAbove(baseText, removeKeys)
+    }
+};
+
+
+const validateKey = (removeKeys: string[]) => (key: string) =>
+  !removeKeys.includes(key);
+
+const buildRGX: BuildRGX = (baseText, removeKeys) => {
+  const validate = validateKey(removeKeys);
+  return {
+    text: baseText,
+    escaped: true,
+    //...validate(orKey) && {or: initWith2Args(or, orKey)(baseText, removeKeys) },
+    ...(validate(orKey) && { or: initOr(baseText, removeKeys) }),
+    //...validate(orKey) && {or3: (newText, ...extra) => continue(or(baseText, newText, ...extra), [orKey,...removeKeys]) }
+    ...(validate(thenKey) && { then: initThen(baseText, removeKeys) }),
+    ...(validate(anyOccursKey) && { occurs: initOccurs(baseText, removeKeys) }),
+    ...(validate(anyOccursKey) && {
+      doesNotOccur: initDoesNotOccur(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursAtLeast: initOccursAtLeast(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursOnceOrMore: initOccursOnceOrMore(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursZeroOrMore: initOccursZeroOrMore(baseText, removeKeys),
+    }),
+    ...(validate(anyOccursKey) && {
+      occursBetween: initOccursBetween(baseText, removeKeys),
+    }),
+    ...(validate(followedByKey) && {
+      followedBy: initFollowedBy(baseText, removeKeys),
+    }),
+    ...(validate(notFollowedByKey) && {
+      notFollowedBy: initNotFollowedBy(baseText, removeKeys),
+    }),
+    ...(validate(precededByKey) && {
+      precededBy: initPrecededBy(baseText, removeKeys),
+    }),
+    ...(validate(notPrecededByKey) && {
+      notPrecededBy: initNotPrecededBy(baseText, removeKeys),
+    }),
+    ...(validate(atStartKey) && { atStart: initAtStart(baseText, removeKeys) }),
+    ...(validate(atEndKey) && { atEnd: initAtEnd(baseText, removeKeys) }),
+    ...(validate(isOptionalKey) && {
+      isOptional: initIsOptional(baseText, removeKeys),
+    }),
+    ...(validate(isCapturedKey) && {
+      isCaptured: initIsCaptured(baseText, removeKeys),
+    }),
+  };
+};
+
+const init = (text: string | TextObject) => buildRGX(parseText(text), []); // starting point
+
+type InitCombineText = (
+  func: CombineText,
+  key: string
+) => (
+  baseText: string,
+  removeKeys: string[]
+) => (
+  newText: string | TextObject,
+  ...extra: (string | TextObject)[]
+) => RGXUnit;
+const initCombineText: InitCombineText = (func, key) => (
+  baseText,
+  removeKeys
+) => (newText, ...extra) =>
+  buildRGX(func(baseText, newText, ...extra), [key, ...removeKeys]);
+const initOr = initCombineText(or, orKey);
+const initThen = initCombineText(then, thenKey);
+const initFollowedBy = initCombineText(followedBy, followedByKey);
+const initNotFollowedBy = initCombineText(notFollowedBy, notFollowedByKey);
+const initPrecededBy = initCombineText(precededBy, precededByKey);
+const initNotPrecededBy = initCombineText(notPrecededBy, notPrecededByKey);
+
+type InitSetRange = (
+  func: SetRange,
+  key: string
+) => (
+  baseText: string,
+  removeKeys: string[]
+) => (min: number, max: number) => RGXUnit;
+const initSetRange: InitSetRange = (func, key) => (baseText, removeKeys) => (
+  min,
+  max
+) => buildRGX(func(baseText, min, max), [key, ...removeKeys]);
+const initOccursBetween = initSetRange(occursBetween, anyOccursKey);
+
+type InitSetFrequency = (
+  func: SetFrequency,
+  key: string
+) => (baseText: string, removeKeys: string[]) => (amount: number) => RGXUnit;
+const initSetFrequency: InitSetFrequency = (func, key) => (
+  baseText,
+  removeKeys
+) => (amount) => buildRGX(func(baseText, amount), [key, ...removeKeys]);
+const initOccurs = initSetFrequency(occurs, anyOccursKey);
+const initOccursAtLeast = initSetFrequency(occursAtLeast, anyOccursKey);
+
+type InitModifyText = (
+  func: ModifyText,
+  key: string
+) => (baseText: string, removeKeys: string[]) => () => RGXUnit;
+const initModifyText: InitModifyText = (func, key) => (
+  baseText,
+  removeKeys
+) => () => buildRGX(func(baseText), [key, ...removeKeys]);
+const initDoesNotOccur = initModifyText(doesNotOccur, anyOccursKey);
+const initOccursOnceOrMore = initModifyText(occursOnceOrMore, anyOccursKey);
+const initOccursZeroOrMore = initModifyText(occursZeroOrMore, anyOccursKey);
+const initAtStart = initModifyText(atStart, atStartKey);
+const initAtEnd = initModifyText(atEnd, atEndKey);
+const initIsOptional = initModifyText(isOptional, isOptionalKey);
+const initIsCaptured = initModifyText(isCaptured, isCapturedKey);
+
+// avoid () call when no args needed
+// set up common searches - ssn, email, etc.
+// set up variable units - (<title>...)<title>
+// withAnd
+// lazy vs greedy settings
+// apply groupings - careful
+// rgx construct
+// rgx deconstruct - optional
+
+// conditionally applied non-capturing grouping when appropriate
+
+// extras from before
+const applyGrouping = (text: string) =>
+  text.length > 1 && /^[^(].+[^)]$/.test(text) ? `(?:${text})` : text;
+
+const reference = (text: string) => ({
+  text,
+  type: "back-reference",
+  key: uniqid(),
+});
+
+const withAnd = (expression) => ({ and: expression }); // use lazyload?
+// when accepting rgx unit, will need to check for string (and escape it) or grab unit.text
+*/

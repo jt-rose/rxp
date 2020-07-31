@@ -101,3 +101,20 @@ export const upperOrLower = (letter: string): TextObject => {
 };
 
 // add anyLetterUpTo/ between functions?
+
+const presets = {
+  anyCharacter,
+  anyCharacterExcept,
+  anyDigit,
+  anyDigitExcept,
+  anyUpperCase,
+  anyUpperCaseExcept,
+  anyLowerCase,
+  anyLowerCaseExcept,
+  anyLetter,
+  anyLetterExcept,
+  anyHexadecimal,
+  upperOrLower,
+};
+
+export default presets;
