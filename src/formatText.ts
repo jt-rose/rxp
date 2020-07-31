@@ -47,7 +47,7 @@ export const or = withTextParsing((text, newText, ...extra) =>
 );
 
 export const then = withTextParsing((text, newText, ...extra) =>
-  withNonCaptureGrouping([text, newText, ...extra].join(","))
+  withNonCaptureGrouping([text, newText, ...extra].join(""))
 );
 
 export const isOptional: ModifyText = (text) => `${text}?`; // add grouping?

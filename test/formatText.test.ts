@@ -38,6 +38,18 @@ describe("Test user text transformations", () => {
       expect(optionalHello).to.equal("(?:hello)?");
     });
   });
+  describe("combine different texts", () => {
+    it("render multiple text as single text", () => {
+      const combinedText = then("(?:first)", "second", "third");
+      expect(combinedText).to.equal("(?:(?:first)(?:second)(?:third))");
+    });
+  });
+  describe("mark text as captured", () => {
+    it("render text with capture marker", () => {
+      const capturedWord = isCaptured("(?:capture)");
+      expect(capturedWord).to.equal("((?:capture))");
+    });
+  });
   describe("mark 2 or more text items as possible", () => {
     it("render text with either marker", () => {
       const orOption = or("Hi", "Bye"); // add req for at least 2 args?
@@ -88,5 +100,36 @@ describe("Define repetitions of supplied character", () => {
       expect(between2And5).to.equal("(?:iguana){2,5}");
     });
   });
+  describe("mark character as not occuring", () => {
+    it("apply not-occuring marker", () => {
+      const noOccurence = doesNotOccur("(?:nothing here)");
+      expect(noOccurence).to.equal("[^(?:nothing here)]");
+    });
+  });
 });
-// positional
+describe("Define text as surrounded by other specified text", () => {
+  describe("mark text as being followed by specified text", () => {
+    it("apply 'followedBy' marker", () => {
+      const followedExample = followedBy("(?:hello)", "goodbye");
+      expect(followedExample).to.equal("(?:hello)(?=(?:goodbye))");
+    });
+  });
+  describe("mark text as NOT being followed by specified text", () => {
+    it("apply 'notFollowedBy' marker", () => {
+      const notFollowedExample = notFollowedBy("(?:hello)", "goodbye");
+      expect(notFollowedExample).to.equal("(?:hello)(?!(?:goodbye))");
+    });
+  });
+  describe("mark text as being preceded by specified text", () => {
+    it("apply 'precededBy' marker", () => {
+      const precededExample = precededBy("(?:goodbye)", "hello");
+      expect(precededExample).to.equal("(?<=(?:hello))(?:goodbye)");
+    });
+  });
+  describe("mark text as NOT being preceded by specified text", () => {
+    it("apply 'notPrecededBy' marker", () => {
+      const notPrecededExample = notPrecededBy("(?:goodbye)", "hello");
+      expect(notPrecededExample).to.equal("(?<!(?:hello))(?:goodbye)");
+    });
+  });
+});
