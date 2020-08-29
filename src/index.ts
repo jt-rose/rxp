@@ -9,6 +9,8 @@ const RGX = {
 };
 export default RGX;
 export { init, presets, shorthand };
+
+// destructure presets and shorthand and provide for export as well
 const {
   anyCharacter,
   anyCharacterExcept,
@@ -33,6 +35,22 @@ export {
   anyLetter,
   anyLetterExcept,
 };
-const { either, oneOrMore, zeroOrMore, noOccurenceOf, optional } = shorthand;
-export { either, oneOrMore, zeroOrMore, noOccurenceOf, optional };
-// destructure presets and shorthand and provide those for export as well
+
+const {
+  either,
+  oneOrMore,
+  zeroOrMore,
+  noOccurenceOf,
+  optional,
+  upperOrLowerCase,
+  wrapRGX,
+} = shorthand;
+export {
+  either,
+  oneOrMore,
+  zeroOrMore,
+  noOccurenceOf,
+  optional,
+  upperOrLowerCase,
+  wrapRGX,
+};
