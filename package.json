@@ -1,7 +1,7 @@
 {
   "name": "rgx",
   "version": "1.0.0",
-  "description": "Declarative syntax wrapper for regular expressions",
+  "description": "Descriptive constructor for regular expressions",
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
