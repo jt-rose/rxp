@@ -5,29 +5,7 @@ import init, {
   getUneditedRegexVariables,
   formatVariableReplacements,
   formatRGXVariables,
-  updateVariables,
 } from "../src/init";
-
-const expectedKeys = [
-  "text",
-  "escaped",
-  "then",
-  "or",
-  "occurs",
-  "doesNotOccur",
-  "occursAtLeast",
-  "occursOnceOrMore",
-  "occursZeroOrMore",
-  "occursBetween",
-  "followedBy",
-  "notFollowedBy",
-  "precededBy",
-  "notPrecededBy",
-  "atStart",
-  "atEnd",
-  "isOptional",
-  "isCaptured",
-];
 
 const everyStepKeys = ["text", "escaped", "construct"];
 const onlyStep1Keys = ["or"];
@@ -56,13 +34,7 @@ const step1Keys = [
   ...onlyStep4Keys,
   ...onlyStep5Keys,
 ];
-const step2Keys = [
-  ...everyStepKeys,
-  ...onlyStep2Keys,
-  ...onlyStep3Keys,
-  ...onlyStep4Keys,
-  ...onlyStep5Keys,
-];
+
 const step3Keys = [...everyStepKeys, "and"];
 const step3KeysAfterAnd = [
   ...onlyStep3Keys,
@@ -74,23 +46,20 @@ const step4KeysAfterAnd = [...onlyStep4Keys, ...onlyStep5Keys];
 const step5Keys = [...everyStepKeys, "and"];
 const step5KeysAfterAnd = onlyStep5Keys;
 
-const compareKeys = (expectedKeys: string[], actualKeys: string[]) =>
-  expectedKeys.every((x) => actualKeys.includes(x));
-
 describe("", () => {
   describe("Initialize RGX unit", () => {
     it("correct escaping of submitted text", () => {
       const initialUnit = init("first step");
       expect(initialUnit.text).to.equal("(?:first step)");
       expect(initialUnit.escaped).to.be.true;
-      // test keys
+      expect(Object.keys(initialUnit)).to.have.same.members(step1Keys);
     });
     it("correct composition of rgx units without additional escaping", () => {
       const sampleRGXUnit = createRGXUnit("(?:pre-escaped sample)");
       const initialUnit = init(sampleRGXUnit);
       expect(initialUnit.text).to.equal("(?:pre-escaped sample)");
       expect(initialUnit.escaped).to.be.true;
-      // test keys
+      expect(Object.keys(initialUnit)).to.have.same.members(step1Keys);
     });
   });
   describe("RGX Step 1 - 'or'", () => {
@@ -100,7 +69,8 @@ describe("", () => {
     });
     it("valid RGX method options after 'or'", () => {
       const orKeys = Object.keys(testOr);
-      expect(orKeys).to.have.same.members(step1Keys); // step 1 is recursive, allowing for additional 'or' methods
+      // step 1 is recursive, allowing for additional 'or' methods
+      expect(orKeys).to.have.same.members(step1Keys);
     });
   });
   describe("RGX Step 2 - 'occurs' grouping", () => {
@@ -312,7 +282,7 @@ describe("", () => {
       );
     });
   });
-  describe("RGX final step - constructor", () => {
+  describe("RGX Final Step - constructor", () => {
     // samples for testing
     const sample = init("sample");
     const sampleConstruct = sample.construct();
@@ -418,7 +388,6 @@ describe("", () => {
     it("valid RegExp formatting", () => {
       expect(`${sampleConstruct}`).to.equal("/(?:sample)/");
       const expectedComplexConstructString =
-        //"/(?:((?:(?:(?:(?<=(?:before))(?:(?:(?:sample)(?:2nd sample))|(?:other option))){5})$)?)))/";
         "/(?:((?:(?:(?<=(?:before))(?:(?:(?:(?:sample)(?:2nd sample))|(?:other option)){5}))$))?)/";
 
       expect(`${complexConstruct}`).to.equal(expectedComplexConstructString);

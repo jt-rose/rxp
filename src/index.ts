@@ -1,6 +1,6 @@
 import init from "./init";
-import presets from "./presets2";
-import shorthand from "./shorthandFunctions";
+import presets from "./presets";
+import shorthand from "./shorthand";
 
 const RGX = {
   init,
