@@ -1,3 +1,5 @@
+import init from "./init";
+
 //////////////////
 // rgx presets //
 /////////////////
@@ -9,7 +11,7 @@ interface TextObject {
 
 // format presets for parsing with RGXBuild constructor
 type CreateTextObj = (text: string) => TextObject;
-const createTextObj: CreateTextObj = (text) => ({
+export const createTextObj: CreateTextObj = (text) => ({
   text,
   escaped: true,
 });

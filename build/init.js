@@ -58,21 +58,25 @@ const generateSurroundings = (text, removeKeys) => {
         followedBy: (newText, ...extra) => createStep3(formatText_1.followedBy(text, newText, ...extra), [
             ...removeKeys,
             followedByKey,
+            atEndKey,
         ]),
     })), (validate(notFollowedByKey) && {
         notFollowedBy: (newText, ...extra) => createStep3(formatText_1.notFollowedBy(text, newText, ...extra), [
             ...removeKeys,
             notFollowedByKey,
+            atEndKey,
         ]),
     })), (validate(precededByKey) && {
         precededBy: (newText, ...extra) => createStep3(formatText_1.precededBy(text, newText, ...extra), [
             ...removeKeys,
             precededByKey,
+            atStartKey,
         ]),
     })), (validate(notPrecededByKey) && {
         notPrecededBy: (newText, ...extra) => createStep3(formatText_1.notPrecededBy(text, newText, ...extra), [
             ...removeKeys,
             notPrecededByKey,
+            atStartKey,
         ]),
     }));
 };
@@ -94,7 +98,7 @@ const generateSettings = (text, removeKeys) => {
         isCaptured: createStep5(formatText_1.isCaptured(text), [...removeKeys, isCapturedKey]),
     }));
 };
-const createStep1 = (text, removeKeys, extendsWithAnd = false) => {
+const createStep1 = (text, removeKeys) => {
     return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ text, escaped: true }, generateExtensions(text, removeKeys)), generateOccurences(text, removeKeys)), generateSurroundings(text, removeKeys)), generateBoundaries(text, removeKeys)), generateSettings(text, removeKeys));
 };
 // step 2 - once a single function is used to define the occurences,
@@ -113,31 +117,75 @@ const createStep2: BuildRGX = (text, removeKeys, extendsWithAnd = false) => {
     ...generateSettings(text, removeKeys),
   };
 };*/
-const createStep3 = (text, removeKeys, extendsWithAnd = false) => {
-    const baseObj = Object.assign({ text, escaped: true }, generateBoundaries(text, removeKeys));
-    const andObject = Object.assign(Object.assign({}, generateSurroundings(text, removeKeys)), generateSettings(text, removeKeys));
-    return formatWithAnd(extendsWithAnd, baseObj, andObject);
-};
-const createStep4 = (text, removeKeys, extendsWithAnd = false) => {
-    const baseObj = Object.assign({ text, escaped: true }, generateBoundaries(text, removeKeys));
-    const andObject = Object.assign({}, generateSettings(text, removeKeys));
-    return formatWithAnd(extendsWithAnd, baseObj, andObject);
-};
-const createStep5 = (text, removeKeys, extendsWithAnd = false) => {
-    const baseObj = {
+const createStep3 = (text, removeKeys) => {
+    return {
         text,
         escaped: true,
+        and: Object.assign(Object.assign(Object.assign({}, generateBoundaries(text, removeKeys)), generateSurroundings(text, removeKeys)), generateSettings(text, removeKeys)),
+    }; /*
+    const baseObj = {
+      text,
+      escaped: true,
+      ...generateBoundaries(text, removeKeys),
     };
-    const andObject = Object.assign({}, generateSettings(text, removeKeys));
-    return formatWithAnd(extendsWithAnd, baseObj, andObject);
+    const andObject = {
+      ...generateSurroundings(text, removeKeys),
+      ...generateSettings(text, removeKeys),
+    };
+  
+    return formatWithAnd(extendsWithAnd, baseObj, andObject);*/
 };
-const formatWithAnd = (extendsWithAnd, baseObj, andObj) => {
-    if (extendsWithAnd) {
-        return Object.assign(Object.assign({}, baseObj), { andObj });
-    }
-    else {
-        return Object.assign(Object.assign({}, baseObj), andObj);
-    }
+const createStep4 = (text, removeKeys) => {
+    return {
+        text,
+        escaped: true,
+        and: Object.assign(Object.assign({}, generateBoundaries(text, removeKeys)), generateSettings(text, removeKeys)),
+    }; /*
+    const baseObj = {
+      text,
+      escaped: true,
+      ...generateBoundaries(text, removeKeys),
+    };
+    const andObject = {
+      ...generateSettings(text, removeKeys),
+    };
+  
+    return formatWithAnd(extendsWithAnd, baseObj, andObject);*/
 };
+const createStep5 = (text, removeKeys) => {
+    const validate = validateKey(removeKeys);
+    const anyOptionsLeft = validate(isOptionalKey) || validate(isCapturedKey);
+    return Object.assign({ text, escaped: true }, (anyOptionsLeft && {
+        and: Object.assign({}, generateSettings(text, removeKeys)),
+    })); /*
+    const baseObj = {
+      text,
+      escaped: true,
+    };
+    const andObject = {
+      ...generateSettings(text, removeKeys),
+    };
+  
+    return formatWithAnd(extendsWithAnd, baseObj, andObject);*/
+};
+/*
+const formatWithAnd = (
+  extendsWithAnd: boolean,
+  baseObj: RGXUnit,
+  andObj: RGXPathways
+) => {
+  if (extendsWithAnd) {
+    return {
+      ...baseObj,
+      andObj,
+    };
+  } else {
+    return {
+      ...baseObj,
+      ...andObj,
+    };
+  }
+};*/
 // what if and followed by empty {}?
 const init = (text) => createStep1(formatText_1.parseText(text), []);
+exports.default = init;

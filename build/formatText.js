@@ -8,14 +8,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.atEnd = exports.atStart = exports.isCaptured = exports.notPrecededBy = exports.precededBy = exports.notFollowedBy = exports.followedBy = exports.occursBetween = exports.occursZeroOrMore = exports.occursOnceOrMore = exports.occursAtLeast = exports.doesNotOccur = exports.occurs = exports.isOptional = exports.then = exports.or = exports.parseText = exports.formatRegex = void 0;
 // format user-submitted strings to escape special characters
 exports.formatRegex = (text) => text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
-exports.parseText = (text) => typeof text === "string" ? exports.formatRegex(text) : text.text;
+// wrap regex text in a non-capture grouping
+const withNonCaptureGrouping = (text) => `(?:${text})`;
+exports.parseText = (text) => typeof text === "string"
+    ? withNonCaptureGrouping(exports.formatRegex(text))
+    : text.text;
 const withTextParsing = (func) => (text, newText, ...extra) => {
     const parsedNewText = exports.parseText(newText);
     const parsedExtra = extra.map(exports.parseText);
     return func(text, parsedNewText, ...parsedExtra);
 };
-exports.or = withTextParsing((text, newText, ...extra) => [text, newText, ...extra].join("|"));
-exports.then = withTextParsing((text, newText, ...extra) => [text, newText, ...extra].join(","));
+exports.or = withTextParsing((text, newText, ...extra) => withNonCaptureGrouping([text, newText, ...extra].join("|")));
+exports.then = withTextParsing((text, newText, ...extra) => withNonCaptureGrouping([text, newText, ...extra].join("")));
 exports.isOptional = (text) => `${text}?`; // add grouping?
 exports.occurs = (text, amount) => `${text}{${amount}}`;
 exports.doesNotOccur = (text) => `[^${text}]`;

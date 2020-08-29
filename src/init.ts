@@ -1,322 +1,410 @@
 import {
+  withNonCaptureGrouping,
+  parseText,
   or,
-  then,
   occurs,
   doesNotOccur,
-  occursAtLeast,
   occursOnceOrMore,
   occursZeroOrMore,
+  occursAtLeast,
   occursBetween,
+  convertToGreedySearch,
+  isOptional,
+  isCaptured,
+  atStart,
+  atEnd,
   followedBy,
   notFollowedBy,
   precededBy,
   notPrecededBy,
-  atStart,
-  atEnd,
-  isOptional,
-  isCaptured,
-  parseText,
+  isVariable,
 } from "./formatText";
+import { oneOrMore } from ".";
 
-// Generate tiers of options, removing option sets
-// as unit constructor progresses
-//
-// also remove individual options from each tier
-// after they have already been implemented
-//
-// dynamically inject "and" into object syntax to improve readability
+// Type Settings for RGX constructor
 
-// keys
-// keys are used to track which pathways are still viable
-// when generating the declarative syntax object
-// keys passed to the removeKeys array will be removed from the current object
+// constructor arguments that accept unescaped strings or escaped RGX units
+export type NewText = string | RGXUnit | PresetUnit;
+export type ExtraText = (string | RGXUnit | PresetUnit)[];
 
-// Define keyNames used to check against when removing already used keys
-const orKey = "orKey";
-const thenKey = "thenKey";
-//const anyOccursKey = "anyOccursKey";
-const followedByKey = "followedByKey";
-const notFollowedByKey = "notFollowedByKey";
-const precededByKey = "precededByKey";
-const notPrecededByKey = "notPrecededByKey";
-const atStartKey = "atStartKey";
-const atEndKey = "atEndKey";
-const isOptionalKey = "isOptionalKey";
-const isCapturedKey = "isCapturedKey";
-// useRef?
+// minimal interface for RGX units
+interface RGXBaseUnit extends PresetUnit {
+  construct: () => RegExp;
+}
 
-// check if any optional path should be removed
-const validateKey = (removeKeys: string[]) => (key: string) =>
-  !removeKeys.includes(key);
-
-interface TextObject {
+interface PresetUnit {
   text: string;
   escaped: boolean;
 }
-type BuildRGX = (
-  baseText: string,
-  removeKeys: string[],
-  extendsWithAnd?: boolean
-) => RGXUnit; //specify recursive type?
 
-type ModifyTextRGX = RGXUnit; //() => RGXUnit;
-type CombineTextRGX = (
-  newText: string | TextObject,
-  ...extra: (string | TextObject)[]
-) => RGXUnit;
-type SetFrequencyRGX = (amount: number) => RGXUnit;
-type SetRangeRGX = (min: number, max: number) => RGXUnit;
-
-interface RGXUnit extends RGXPathways {
-  text: string;
-  escaped: boolean;
-  // useRef?
-  // any
+// RGX unit at step 1 with all options available
+// including AndOptions methods inside of and external to 'and' wrapper
+interface RGXUnit extends RGXBaseUnit, AndOptions {
+  or?: (newText: NewText, ...extra: ExtraText) => RGXUnit;
+  occurs?: (amount: number) => AndWrapper;
+  doesNotOccur?: RGXUnit;
+  occursOnceOrMore?: AndWrapper;
+  occursZeroOrMore?: AndWrapper;
+  occursAtLeast?: (min: number) => AndWrapper;
+  occursBetween?: (min: number, max: number) => AndWrapper;
+  // And options without wrapper from AndOptions extension
+  and?: AndOptions;
 }
 
-interface RGXPathways {
-  or?: CombineTextRGX;
-  then?: CombineTextRGX;
-  occurs?: SetFrequencyRGX;
-  doesNotOccur?: ModifyTextRGX;
-  occursAtLeast?: SetFrequencyRGX;
-  occursOnceOrMore?: ModifyTextRGX;
-  occursZeroOrMore?: ModifyTextRGX;
-  occursBetween?: SetRangeRGX;
-  followedBy?: CombineTextRGX;
-  notFollowedBy?: CombineTextRGX;
-  precededBy?: CombineTextRGX;
-  notPrecededBy?: CombineTextRGX;
-  atStart?: ModifyTextRGX;
-  atEnd?: ModifyTextRGX;
-  isOptional?: ModifyTextRGX;
-  isCaptured?: ModifyTextRGX;
-  // useRef?
-  and?: RGXPathways;
+// RGX consturctor methods that may be wrapped in 'and' object
+// for improved readability
+interface AndOptions {
+  followedBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
+  notFollowedBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
+  precededBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
+  notPrecededBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
+  isGreedy?: AndWrapper;
+  atStart?: AndWrapper;
+  atEnd?: AndWrapper | RGXUnit;
+  isOptional?: AndWrapper | RGXUnit;
+  isCaptured?: AndWrapper | RGXUnit;
+  isVariable?: AndWrapper | RGXUnit;
 }
 
-type BuildPathways = (text: string, removeKeys: string[]) => RGXPathways;
+// wrapping AndOptions in 'and' object and joining with base RGX unit
+// for simpler type settings on method calls
+interface AndWrapper extends RGXBaseUnit {
+  and: AndOptions;
+}
 
-// step 1
-const generateExtensions: BuildPathways = (text, removeKeys) => {
-  // remove default val for removeKeys on steps 2-5
-  const validate = validateKey(removeKeys);
-  return {
-    ...(validate(orKey) && {
-      or: (newText, ...extra) =>
-        createStep1(or(text, newText, ...extra), [...removeKeys, orKey]),
-    }), // move to step 2 immmediately?
-    ...(validate(thenKey) && {
-      then: (newText, ...extra) =>
-        createStep1(then(text, newText, ...extra), [...removeKeys, thenKey]),
-    }),
-  };
+// RGX constructor factory functions
+
+// The RGX constructor contains the base RGX unit
+// which stores the modifiable text as a string
+// along with a regex 'construct' method
+// which are always available and can be passed into other
+// RGX units in a composable manner
+
+// The constructor has five steps available:
+// step 1 - or - define alternate possible text options
+// step 2 - occurs family - define frequency
+// step 3 - precededBy/ followedBy - define surrounding text
+// step 4 - atStart/ atEnd - check at borders of text
+// step 5 - isOptional/ Captured/ Variable - define settings of regex text
+
+// The constructor is opinionated and has some behavior
+// designed to avoid errors if possible
+// The user may skip to later steps right away but not return to earlier ones
+// As the constructor moves through each step, previous steps are removed
+// and some future steps may be removed if they would cause issues
+// i.e.: combining 'precededBy' and 'atStart' => /^(?<=first)second/
+// does not work as may be expected
+// the use of intellisense to guide the user based on the above type settings
+// makes this much more intuitive and is highly recommended
+
+const constructRGX = (RGXString: string) => {
+  const formatWithVariables = formatRGXVariables(RGXString);
+  return new RegExp(formatWithVariables);
 };
 
-// step 2 - generate occurences
-// only once occurence definition allowed, immediately move to step 3
-const generateOccurences: BuildPathways = (text, removeKeys) => {
-  //const validate = validateKey(removeKeys);
-  return {
-    // add validation after refactor?
-    occurs: (amount: number) => createStep3(occurs(text, amount), removeKeys),
-    doesNotOccur: /*() => */ createStep3(doesNotOccur(text), removeKeys),
-    occursOnceOrMore: /*() => */ createStep3(
-      occursOnceOrMore(text),
-      removeKeys
-    ),
-    occursZeroOrMore: /*() => */ createStep3(
-      occursZeroOrMore(text),
-      removeKeys
-    ),
-    occursAtLeast: (min: number) =>
-      createStep3(occursAtLeast(text, min), removeKeys),
-    occursBetween: (min: number, max: number) =>
-      createStep3(occursBetween(text, min, max), removeKeys),
-  };
+//1. check for variables
+//2. if var, map out replacement <names>
+//3. use reducer to replace non-first variables with replacement names
+/*const regexVariables = RGXString.match(/\(\?<.+?>.+?\)/g);
+  if (regexVariables) {
+    regexVariables.reduce((previousString, regexVar) => previousString.replace(new RegExp(`(?<=${regexVar}).+${regexVar}`), regexVar.replace(/.+(?=<)/, "").replace(/(?<=>).+/, ""), RGXString)
+  }*/
+// combine with above?
+
+export const getUneditedRegexVariables = (
+  RGXString: string
+): string[] | null => {
+  const foundVariables = RGXString.match(/\(\?<.+?>.+?\\\\k<.+?>\)/g);
+  return foundVariables ? [...new Set(foundVariables)] : null;
 };
 
-// step 3 - generate surroundings
-const generateSurroundings: BuildPathways = (text, removeKeys) => {
-  const validate = validateKey(removeKeys);
-  return {
-    ...(validate(followedByKey) && {
-      followedBy: (newText, ...extra) =>
-        createStep3(followedBy(text, newText, ...extra), [
-          ...removeKeys,
-          followedByKey,
-          atEndKey,
-        ]),
-    }),
-    ...(validate(notFollowedByKey) && {
-      notFollowedBy: (newText, ...extra) =>
-        createStep3(notFollowedBy(text, newText, ...extra), [
-          ...removeKeys,
-          notFollowedByKey,
-          atEndKey,
-        ]),
-    }),
-    ...(validate(precededByKey) && {
-      precededBy: (newText, ...extra) =>
-        createStep3(precededBy(text, newText, ...extra), [
-          ...removeKeys,
-          precededByKey,
-          atStartKey,
-        ]),
-    }),
-    ...(validate(notPrecededByKey) && {
-      notPrecededBy: (newText, ...extra) =>
-        createStep3(notPrecededBy(text, newText, ...extra), [
-          ...removeKeys,
-          notPrecededByKey,
-          atStartKey,
-        ]),
-    }),
-  };
+interface FormattedRegexVariables {
+  original: string;
+  firstUseEdit: string;
+  followingUseEdit: string;
+}
+export const formatVariableReplacements = (
+  variablesFound: string[]
+): FormattedRegexVariables[] =>
+  variablesFound.map((regexVar) => ({
+    original: regexVar,
+    firstUseEdit: regexVar.replace(/\\\\k<.+?>/, ""),
+    followingUseEdit: regexVar.replace(/\?<.+?>.+?(?=\\\\k<.+?>)/, ""),
+  }));
+
+export const updateFirstVariableUsage = (
+  RGXString: string,
+  regexVar: FormattedRegexVariables[]
+): string => {
+  return regexVar.reduce((currentString, varFound) => {
+    return currentString.replace(varFound.original, varFound.firstUseEdit);
+  }, RGXString);
 };
 
-// step 4 - generate boundaries
-const generateBoundaries: BuildPathways = (text, removeKeys) => {
-  const validate = validateKey(removeKeys);
-  return {
-    ...(validate(atStartKey) && {
-      atStart: createStep4(atStart(text), [...removeKeys, atStartKey]),
-    }),
-    ...(validate(atEndKey) && {
-      atEnd: createStep5(atEnd(text), removeKeys),
-    }), // moving to step 5, no addition to key removal needed
-  };
+export const updateSubsequentVariables = (
+  RGXString: string,
+  regexVar: FormattedRegexVariables[]
+): string => {
+  return regexVar.reduce((currentString, varFound) => {
+    const searchPattern = new RegExp(parseText(varFound.original), "g");
+    return currentString.replace(searchPattern, varFound.followingUseEdit);
+  }, RGXString);
 };
 
-// step 5 - generate settings
-const generateSettings: BuildPathways = (text, removeKeys) => {
-  const validate = validateKey(removeKeys);
-  return {
-    ...(validate(isOptionalKey) && {
-      isOptional: createStep5(isOptional(text), [...removeKeys, isOptionalKey]),
-    }),
-    ...(validate(isCapturedKey) && {
-      isCaptured: createStep5(isCaptured(text), [...removeKeys, isCapturedKey]),
-    }),
-  };
-};
+export const updateVariables = (
+  RGXString: string,
+  replacements: FormattedRegexVariables[]
+): string =>
+  updateSubsequentVariables(
+    updateFirstVariableUsage(RGXString, replacements),
+    replacements
+  );
 
-const createStep1: BuildRGX = (text, removeKeys) => {
-  return {
-    text,
-    escaped: true,
-    ...generateExtensions(text, removeKeys),
-    ...generateOccurences(text, removeKeys),
-    ...generateSurroundings(text, removeKeys),
-    ...generateBoundaries(text, removeKeys),
-    ...generateSettings(text, removeKeys),
-  };
-};
-
-// step 2 - once a single function is used to define the occurences,
-// the rgx builder will cancel out the other and move to step 3
-// The step 2 functions will be called from within step 1
-// and have no need to recursively call an updated version of step 2
-// therefore, we can skip a 'createStep2' function altogether
-
-/*
-const createStep2: BuildRGX = (text, removeKeys, extendsWithAnd = false) => {
-  return {
-    text,
-    escaped: true,
-    ...generateOccurences(text, removeKeys),
-    ...generateSurroundings(text, removeKeys),
-    ...generateBoundaries(text, removeKeys),
-    ...generateSettings(text, removeKeys),
-  };
-};*/
-
-const createStep3: BuildRGX = (text, removeKeys) => {
-  return {
-    text,
-    escaped: true,
-    and: {
-      ...generateBoundaries(text, removeKeys),
-      ...generateSurroundings(text, removeKeys),
-      ...generateSettings(text, removeKeys),
-    },
-  }; /*
-  const baseObj = {
-    text,
-    escaped: true,
-    ...generateBoundaries(text, removeKeys),
-  };
-  const andObject = {
-    ...generateSurroundings(text, removeKeys),
-    ...generateSettings(text, removeKeys),
-  };
-
-  return formatWithAnd(extendsWithAnd, baseObj, andObject);*/
-};
-
-const createStep4: BuildRGX = (text, removeKeys) => {
-  return {
-    text,
-    escaped: true,
-    and: {
-      ...generateBoundaries(text, removeKeys),
-      ...generateSettings(text, removeKeys),
-    },
-  }; /*
-  const baseObj = {
-    text,
-    escaped: true,
-    ...generateBoundaries(text, removeKeys),
-  };
-  const andObject = {
-    ...generateSettings(text, removeKeys),
-  };
-
-  return formatWithAnd(extendsWithAnd, baseObj, andObject);*/
-};
-
-const createStep5: BuildRGX = (text, removeKeys) => {
-  const validate = validateKey(removeKeys);
-  const anyOptionsLeft = validate(isOptionalKey) || validate(isCapturedKey);
-  return {
-    text,
-    escaped: true,
-    ...(anyOptionsLeft && {
-      and: {
-        ...generateSettings(text, removeKeys),
-      },
-    }),
-  }; /*
-  const baseObj = {
-    text,
-    escaped: true,
-  };
-  const andObject = {
-    ...generateSettings(text, removeKeys),
-  };
-
-  return formatWithAnd(extendsWithAnd, baseObj, andObject);*/
-};
-/*
-const formatWithAnd = (
-  extendsWithAnd: boolean,
-  baseObj: RGXUnit,
-  andObj: RGXPathways
-) => {
-  if (extendsWithAnd) {
-    return {
-      ...baseObj,
-      andObj,
-    };
+export const formatRGXVariables = (RGXString: string): string => {
+  const regexVariables = getUneditedRegexVariables(RGXString);
+  if (regexVariables) {
+    const replacements = formatVariableReplacements(regexVariables);
+    return updateVariables(RGXString, replacements);
   } else {
-    return {
-      ...baseObj,
-      ...andObj,
-    };
+    return RGXString;
   }
-};*/
-// what if and followed by empty {}?
+}; /*
+    }));
+    const formattedVariables = varReplacements.reduce(
+      (currentString, regexVar) => {
+        const updatedFirstVariable = currentString.replace(regexVar.init, regexVar.starting);
+        return updateSubsequentVariables(updatedFirstVariable, regexVar.init, regexVar.following);
+      },RGXString);
+    return formattedVariables;
+  } else {
+    return RGXString;
+  }
+};*/ // use formatting for regexvar // .+? in /.+?/ will matcn t of test, not test unless border given // will variables within variables work? need warning? // create base RGX unit that will always be available
 
-const init = (text: string | TextObject): RGXUnit =>
-  createStep1(parseText(text), []);
+/*
+const formatRGXVariables = (RGXString: string) => {
+  const regexVariables = RGXString.match(/\(\?<.+?>.+?\\\\k<.+?>\)/g); //(/\(\?<.+?>(?:(\(.+\))|.+)\)/g); // what about more )? /(?:(\(.+\))|.+)/
+  if (regexVariables) {
+    const varReplacements = regexVariables.map((regexVar) => ({
+      init: regexVar,
+      starting: regexVar.replace(/\\\\k<.+?>/, ""),
+      following: regexVar.replace(/\?<.+?>>+?(?=\\\\k<.+?>)/, ""), //"\\k" + regexVar.replace(/\(\?/, "").replace(/(?<=>).+/, ""), //"\\k" + regexVar.replace(/.+(?=<)/, "").replace(/(?<=>).+/, ""),
+      /*searchPattern: new RegExp(
+        `(?<=${parseText(regexVar)}).+${parseText(regexVar)}`,
+        "g"
+      ),*/ export const createRGXUnit = (
+  text: string
+): RGXBaseUnit => ({
+  text,
+  escaped: true,
+  construct: () => constructRGX(text),
+});
+
+// map out available constructor method options,
+// starting with step 5 since it has the least available options left
+
+// step 5 - isOptional, isCaptured, isVariable
+const step5Options = (text: string) => ({
+  isOptional: {
+    // isVariable not used with isOptional
+    ...createRGXUnit(isOptional(text)),
+    and: {
+      isCaptured: {
+        ...createRGXUnit(isCaptured(isOptional(text))),
+      },
+    },
+  },
+  isCaptured: {
+    ...createRGXUnit(isCaptured(text)),
+    and: {
+      isOptional: {
+        ...createRGXUnit(isOptional(isCaptured(text))),
+      },
+      isVariable: {
+        ...createRGXUnit(isVariable(isCaptured(text))),
+      },
+    },
+  },
+  isVariable: {
+    ...createRGXUnit(isVariable(text)),
+    and: {
+      // isCaptured should be initialized before
+      isOptional: {
+        ...createRGXUnit(isOptional(isVariable(text))),
+      },
+    },
+  },
+});
+
+const buildRGXStep5 = (text: string) => ({
+  ...createRGXUnit(text),
+  and: step5Options(text),
+});
+
+// Branching step 4 options - atStart, atEnd
+const step4Options = (text: string) => ({
+  atStart: buildRGXStep5(atStart(text)),
+  atEnd: buildRGXStep5(atEnd(text)),
+});
+
+const buildRGXStep4 = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    ...step4Options(text),
+    ...step5Options(text),
+  },
+});
+
+// atStart triggers step 5, skipping atEnd option
+const buildRGXStep4OnlyAtStart = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    atStart: buildRGXStep5(atStart(text)),
+    ...step5Options(text),
+  },
+});
+
+const buildRGXStep4OnlyAtEnd = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    atEnd: buildRGXStep5(atEnd(text)),
+    ...step5Options(text),
+  },
+});
+
+const buildRGXStep4WithoutStep5 = (text: string) => ({
+  ...createRGXUnit(text),
+  atStart: {
+    ...createRGXUnit(atStart(text)),
+  },
+  atEnd: {
+    ...createRGXUnit(atEnd(text)),
+  },
+});
+
+// branching step 3 options - precededBy, followedBy
+
+const buildRGXStep3WithoutStep4 = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    followedBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(followedBy(text, newText, ...extra)),
+    notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(notFollowedBy(text, newText, ...extra)),
+    precededBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(precededBy(text, newText, ...extra)),
+    notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(notPrecededBy(text, newText, ...extra)),
+    ...step5Options(text),
+  },
+});
+
+const buildRGXStep3WithoutAtStart = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    followedBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(followedBy(text, newText, ...extra)),
+    notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(notFollowedBy(text, newText, ...extra)),
+    precededBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutAtStart(precededBy(text, newText, ...extra)),
+    notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutAtStart(notPrecededBy(text, newText, ...extra)),
+    atEnd: buildRGXStep5(atEnd(text)),
+    /*buildRGXStep4OnlyAtEnd(atEnd(text)),*/
+    ...step5Options(text),
+  },
+});
+
+const buildRGXStep3WithoutAtEnd = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    followedBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutAtEnd(followedBy(text, newText, ...extra)),
+    notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutAtEnd(notFollowedBy(text, newText, ...extra)),
+    precededBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(precededBy(text, newText, ...extra)),
+    notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
+      buildRGXStep3WithoutStep4(notPrecededBy(text, newText, ...extra)),
+    atStart: buildRGXStep5(
+      atStart(text)
+    ) /*buildRGXStep4OnlyAtStart(atStart(text)),*/,
+    ...step5Options(text),
+  },
+});
+
+const step3Options = (text: string) => ({
+  followedBy: (newText: NewText, ...extra: ExtraText) =>
+    buildRGXStep3WithoutAtEnd(followedBy(text, newText, ...extra)),
+  notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
+    buildRGXStep3WithoutAtEnd(notFollowedBy(text, newText, ...extra)),
+  precededBy: (newText: NewText, ...extra: ExtraText) =>
+    buildRGXStep3WithoutAtStart(precededBy(text, newText, ...extra)),
+  notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
+    buildRGXStep3WithoutAtStart(notPrecededBy(text, newText, ...extra)),
+});
+
+const buildRGXStep3 = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    ...step3Options(text),
+    ...step4Options(text),
+    ...step5Options(text),
+  },
+});
+
+// step2.5 options => modify lazy searches to greedy searches
+const buildRGXStep3WithGreedyConverter = (text: string) => ({
+  ...createRGXUnit(text),
+  and: {
+    isGreedy: buildRGXStep3(convertToGreedySearch(text)),
+    ...step3Options(text),
+    ...step4Options(text),
+    ...step5Options(text),
+  },
+});
+
+// step 2 options - occurs family
+const step2Options = (text: string) => ({
+  occurs: (amount: number) => buildRGXStep3(occurs(text, amount)),
+  doesNotOccur: buildRGXStep4WithoutStep5(doesNotOccur(text)),
+  occursOnceOrMore: buildRGXStep3WithGreedyConverter(occursOnceOrMore(text)), // lazy load/ getter?
+  occursZeroOrMore: buildRGXStep3WithGreedyConverter(occursZeroOrMore(text)),
+  occursAtLeast: (min: number) => buildRGXStep3(occursAtLeast(text, min)),
+  occursBetween: (min: number, max: number) =>
+    buildRGXStep3(occursBetween(text, min, max)),
+});
+
+const buildRGXStep2 = (text: string) => ({
+  ...createRGXUnit(text),
+  //options without and
+  ...step2Options(text),
+  ...step3Options(text),
+  ...step4Options(text),
+  ...step5Options(text),
+});
+
+// step 1 - or
+export const buildRGXStep1 = (text: string) => ({
+  ...createRGXUnit(text),
+  or: (newText: NewText, ...extra: ExtraText) =>
+    buildRGXStep1(or(text, newText, ...extra)), // jump to next level?
+  ...step2Options(text),
+  ...step3Options(text),
+  ...step4Options(text),
+  ...step5Options(text),
+});
+
+// initialize RGX constructor, accepting a series
+// of unescaped strings or escaped RGX units
+// and formatting them before returning step 1 of the constructor
+const init = (text: NewText, ...extra: ExtraText) => {
+  const formattedText = [text, ...extra].map((x) => parseText(x)).join("");
+  // apply nonCaptureGrouping if more than one arg given
+  const textWithGrouping =
+    extra.length > 0 ? withNonCaptureGrouping(formattedText) : formattedText;
+  return buildRGXStep1(textWithGrouping);
+};
+
 export default init;
