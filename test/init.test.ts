@@ -437,6 +437,50 @@ describe("", () => {
         "/(?:(?<>(?:var))(?:some text)(\\\\k<>))/"
       );
     });
+    it("valid construction of regex flags", () => {
+      // test single flag constructors
+      const testDefault = init("sample").construct("");
+      const testGlobal = init("sample").construct("g");
+      const testIgnoreCase = init("sample").construct("i");
+      const testMultiline = init("sample").construct("m");
+      const testDotAll = init("sample").construct("s");
+      const testUnicode = init("sample").construct("u");
+      const testSticky = init("sample").construct("y");
+
+      expect(`${testDefault}`).to.equal("/(?:sample)/");
+      expect(testGlobal.global).to.be.true;
+      expect(testIgnoreCase.ignoreCase).to.be.true;
+      expect(testMultiline.multiline).to.be.true;
+      expect(/s$/.test(`${testDotAll}`)).to.be.true;
+      expect(testUnicode.unicode).to.be.true;
+      expect(testSticky.sticky).to.be.true;
+
+      // test supplied keywords
+      const testDefaultKeyWord = init("sample").construct("default");
+      const testGlobalKeyWord = init("sample").construct("global");
+      const testIgnoreCaseKeyWord = init("sample").construct("ignoreCase");
+      const testMultilineKeyWord = init("sample").construct("multiline");
+      const testDotAllKeyWord = init("sample").construct("dotAll");
+      const testUnicodeKeyWord = init("sample").construct("unicode");
+      const testStickyKeyWord = init("sample").construct("sticky");
+
+      expect(`${testDefaultKeyWord}`).to.equal("/(?:sample)/");
+      expect(testGlobalKeyWord.global).to.be.true;
+      expect(testIgnoreCaseKeyWord.ignoreCase).to.be.true;
+      expect(testMultilineKeyWord.multiline).to.be.true;
+      expect(/s$/.test(`${testDotAllKeyWord}`)).to.be.true;
+      expect(testUnicodeKeyWord.unicode).to.be.true;
+      expect(testStickyKeyWord.sticky).to.be.true;
+
+      // test construction of multiple flags
+      const testMultipleFlags = init("sample").construct("g", "ignoreCase");
+      expect(testMultipleFlags.global).to.be.true;
+      expect(testMultipleFlags.ignoreCase).to.be.true;
+      expect(testMultipleFlags.unicode).to.be.false;
+
+      // test rejection of invalid flags/ keywords
+      expect(() => init("sample").construct("whoops!")).to.throw();
+    });
   });
 });
 

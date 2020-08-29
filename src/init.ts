@@ -29,7 +29,7 @@ export type ExtraText = (string | RGXUnit | PresetUnit)[];
 
 // minimal interface for RGX units
 interface RGXBaseUnit extends PresetUnit {
-  construct: () => RegExp;
+  construct: (...flags: string[]) => RegExp;
 }
 
 interface PresetUnit {
@@ -97,9 +97,75 @@ interface AndWrapper extends RGXBaseUnit {
 // the use of intellisense to guide the user based on the above type settings
 // makes this much more intuitive and is highly recommended
 
-const constructRGX = (RGXString: string) => {
+// define acceptable flag names for RegExp constructor
+const defaultFlag = "";
+const defaultFlagKeyWord = "default";
+const globalFlag = "g";
+const globalFlagKeyWord = "global";
+const ignoreCaseFlag = "i";
+const ignoreCaseFlagKeyWord = "ignoreCase";
+const multilineFlag = "m";
+const multilineFlagKeyWord = "multiline";
+const dotAllFlag = "s";
+const dotAllFlagKeyWord = "dotAll";
+const unicodeFlag = "u";
+const unicodeFlagKeyWord = "unicode";
+const stickyFlag = "y";
+const stickyFlagKeyWord = "sticky";
+
+const validFlags = [
+  defaultFlag,
+  defaultFlagKeyWord,
+  globalFlag,
+  globalFlagKeyWord,
+  ignoreCaseFlag,
+  ignoreCaseFlagKeyWord,
+  multilineFlag,
+  multilineFlagKeyWord,
+  dotAllFlag,
+  dotAllFlagKeyWord,
+  unicodeFlag,
+  unicodeFlagKeyWord,
+  stickyFlag,
+  stickyFlagKeyWord,
+];
+const validateFlag = (flag: string) => validFlags.includes(flag);
+const validateFlags = (flags: string[]) => flags.every(validateFlag);
+
+const convertFlagName = (flag: string) => {
+  switch (flag) {
+    case defaultFlagKeyWord:
+      return defaultFlag;
+    case globalFlagKeyWord:
+      return globalFlag;
+    case ignoreCaseFlagKeyWord:
+      return ignoreCaseFlag;
+    case multilineFlagKeyWord:
+      return multilineFlag;
+    case dotAllFlagKeyWord:
+      return dotAllFlag;
+    case unicodeFlagKeyWord:
+      return unicodeFlag;
+    case stickyFlagKeyWord:
+      return stickyFlag;
+    default:
+      return flag;
+  }
+};
+const constructFlagMarkers = (flags: string[]) =>
+  [...new Set(flags.map(convertFlagName))].join("");
+
+const constructRGX = (RGXString: string, flags: string[]) => {
+  if (!validateFlags(flags)) {
+    throw new Error(
+      `Invalid flag letter/ keyword submitted. Flags must be one of the following: ${validFlags.join(
+        ", "
+      )}`
+    );
+  }
+  const flagMarkers = constructFlagMarkers(flags);
   const formatWithVariables = formatRGXVariables(RGXString);
-  return new RegExp(formatWithVariables);
+  return new RegExp(formatWithVariables, flagMarkers);
 };
 
 //1. check for variables
@@ -197,7 +263,7 @@ const formatRGXVariables = (RGXString: string) => {
 ): RGXBaseUnit => ({
   text,
   escaped: true,
-  construct: () => constructRGX(text),
+  construct: (...flags: string[]) => constructRGX(text, flags),
 });
 
 // map out available constructor method options,
