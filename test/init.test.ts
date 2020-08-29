@@ -42,9 +42,7 @@ const step3KeysAfterAnd = [
   ...onlyStep5Keys,
 ];
 const step4Keys = [...everyStepKeys, "and"];
-const step4KeysAfterAnd = [...onlyStep4Keys, ...onlyStep5Keys];
 const step5Keys = [...everyStepKeys, "and"];
-const step5KeysAfterAnd = onlyStep5Keys;
 
 describe("", () => {
   describe("Initialize RGX unit", () => {
@@ -136,11 +134,8 @@ describe("", () => {
       );
 
       expect(Object.keys(testDoesNotOccur)).to.have.same.members([
-        "atStart",
-        "atEnd",
-        "text",
-        "escaped",
-        "construct",
+        ...onlyStep4Keys,
+        ...everyStepKeys,
       ]);
     });
   });
@@ -166,30 +161,23 @@ describe("", () => {
       expect(Object.keys(testFollowedBy)).to.have.same.members(step3Keys);
       expect(Object.keys(testNotFollowedBy)).to.have.same.members(step3Keys);
 
-      const surroundingOptionKeys = [
-        "precededBy",
-        "notPrecededBy",
-        "followedBy",
-        "notFollowedBy",
-      ];
-      const settingOptionKeys = ["isOptional", "isCaptured", "isVariable"];
+      // test step 4 variations after and
       const atStartKey = "atStart";
       const atEndKey = "atEnd";
-      // test step 4 variations after and
 
       const step3KeysAfterAndWithoutAtStart = [
-        ...surroundingOptionKeys,
+        ...onlyStep3Keys,
         atEndKey,
-        ...settingOptionKeys,
+        ...onlyStep5Keys,
       ];
       const step3KeysAfterAndWithoutAtEnd = [
-        ...surroundingOptionKeys,
+        ...onlyStep3Keys,
         atStartKey,
-        ...settingOptionKeys,
+        ...onlyStep5Keys,
       ];
       const step3KeysAfterAndWithoutStep4 = [
-        ...surroundingOptionKeys,
-        ...settingOptionKeys,
+        ...onlyStep3Keys,
+        ...onlyStep5Keys,
       ];
       expect(Object.keys(testPrecededBy.and)).to.have.same.members(
         step3KeysAfterAndWithoutAtStart
@@ -218,10 +206,9 @@ describe("", () => {
       expect(testAtEnd.text).to.equal("(?:(?:sample)$)");
     });
     it("valid RGX method options after step 4 options", () => {
-      const step4BaseKeys = ["text", "escaped", "construct", "and"];
-      expect(Object.keys(testAtStart)).to.have.same.members(step4BaseKeys);
+      expect(Object.keys(testAtStart)).to.have.same.members(step4Keys);
       expect(Object.keys(testAtStart.and)).to.have.same.members(onlyStep5Keys);
-      expect(Object.keys(testAtEnd)).to.have.same.members(step4BaseKeys);
+      expect(Object.keys(testAtEnd)).to.have.same.members(step4Keys);
       expect(Object.keys(testAtEnd.and)).to.have.same.members(onlyStep5Keys);
     });
   });
@@ -250,36 +237,27 @@ describe("", () => {
       expect(correctVariableTransformation).to.be.true;
     });
     it("valid RGX method options after step 5 options", () => {
-      const baseRGXKeys = ["text", "escaped", "construct"];
-      const baseRGXKeysWithAnd = [...baseRGXKeys, "and"];
-
-      expect(Object.keys(testIsOptional)).to.have.same.members(
-        baseRGXKeysWithAnd
-      );
+      expect(Object.keys(testIsOptional)).to.have.same.members(step5Keys);
       expect(Object.keys(testIsOptional.and)).to.have.same.members([
         "isCaptured",
       ]);
       expect(Object.keys(testIsOptionalAndCaptured)).to.have.same.members(
-        baseRGXKeys
+        everyStepKeys
       );
 
-      expect(Object.keys(testIsCaptured)).to.have.same.members(
-        baseRGXKeysWithAnd
-      );
+      expect(Object.keys(testIsCaptured)).to.have.same.members(step5Keys);
       expect(Object.keys(testIsCaptured.and)).to.have.same.members([
         "isOptional",
         "isVariable",
       ]);
       expect(Object.keys(testIsCapturedAndOptional)).to.have.same.members(
-        baseRGXKeys
+        everyStepKeys
       );
       expect(Object.keys(testIsCapturedAndVariable)).to.have.same.members(
-        baseRGXKeys
+        everyStepKeys
       );
 
-      expect(Object.keys(testIsVariable)).to.have.same.members(
-        baseRGXKeysWithAnd
-      );
+      expect(Object.keys(testIsVariable)).to.have.same.members(step5Keys);
     });
   });
   describe("RGX Final Step - constructor", () => {
@@ -298,6 +276,7 @@ describe("", () => {
       "some text",
       sampleVariable
     ).construct();
+
     // rgx-style variables
     const rgxVar1 = "(?<varName>(?:stuff)\\\\k<varName>)";
     const rgxVar2 = "(?<secondVar>(?:text)\\\\k<secondVar>)";
@@ -452,6 +431,3 @@ describe("", () => {
     });
   });
 });
-
-// apply greedy search option
-// apply global and other final options
