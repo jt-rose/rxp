@@ -19,9 +19,8 @@ import {
   notPrecededBy,
   isVariable,
 } from "./formatText";
-import { oneOrMore } from ".";
 
-// Type Settings for RGX constructor
+//// Type Settings for RGX constructor ////
 
 // constructor arguments that accept unescaped strings or escaped RGX units
 export type NewText = string | RGXUnit | PresetUnit;
@@ -234,33 +233,9 @@ export const formatRGXVariables = (RGXString: string): string => {
   } else {
     return RGXString;
   }
-}; /*
-    }));
-    const formattedVariables = varReplacements.reduce(
-      (currentString, regexVar) => {
-        const updatedFirstVariable = currentString.replace(regexVar.init, regexVar.starting);
-        return updateSubsequentVariables(updatedFirstVariable, regexVar.init, regexVar.following);
-      },RGXString);
-    return formattedVariables;
-  } else {
-    return RGXString;
-  }
-};*/ // use formatting for regexvar // .+? in /.+?/ will matcn t of test, not test unless border given // will variables within variables work? need warning? // create base RGX unit that will always be available
+};
 
-/*
-const formatRGXVariables = (RGXString: string) => {
-  const regexVariables = RGXString.match(/\(\?<.+?>.+?\\\\k<.+?>\)/g); //(/\(\?<.+?>(?:(\(.+\))|.+)\)/g); // what about more )? /(?:(\(.+\))|.+)/
-  if (regexVariables) {
-    const varReplacements = regexVariables.map((regexVar) => ({
-      init: regexVar,
-      starting: regexVar.replace(/\\\\k<.+?>/, ""),
-      following: regexVar.replace(/\?<.+?>>+?(?=\\\\k<.+?>)/, ""), //"\\k" + regexVar.replace(/\(\?/, "").replace(/(?<=>).+/, ""), //"\\k" + regexVar.replace(/.+(?=<)/, "").replace(/(?<=>).+/, ""),
-      /*searchPattern: new RegExp(
-        `(?<=${parseText(regexVar)}).+${parseText(regexVar)}`,
-        "g"
-      ),*/ export const createRGXUnit = (
-  text: string
-): RGXBaseUnit => ({
+export const createRGXUnit = (text: string): RGXBaseUnit => ({
   text,
   escaped: true,
   construct: (...flags: string[]) => constructRGX(text, flags),
@@ -313,31 +288,6 @@ const step4Options = (text: string) => ({
   atEnd: buildRGXStep5(atEnd(text)),
 });
 
-const buildRGXStep4 = (text: string) => ({
-  ...createRGXUnit(text),
-  and: {
-    ...step4Options(text),
-    ...step5Options(text),
-  },
-});
-
-// atStart triggers step 5, skipping atEnd option
-const buildRGXStep4OnlyAtStart = (text: string) => ({
-  ...createRGXUnit(text),
-  and: {
-    atStart: buildRGXStep5(atStart(text)),
-    ...step5Options(text),
-  },
-});
-
-const buildRGXStep4OnlyAtEnd = (text: string) => ({
-  ...createRGXUnit(text),
-  and: {
-    atEnd: buildRGXStep5(atEnd(text)),
-    ...step5Options(text),
-  },
-});
-
 const buildRGXStep4WithoutStep5 = (text: string) => ({
   ...createRGXUnit(text),
   atStart: {
@@ -349,7 +299,6 @@ const buildRGXStep4WithoutStep5 = (text: string) => ({
 });
 
 // branching step 3 options - precededBy, followedBy
-
 const buildRGXStep3WithoutStep4 = (text: string) => ({
   ...createRGXUnit(text),
   and: {
@@ -440,15 +389,6 @@ const step2Options = (text: string) => ({
   occursAtLeast: (min: number) => buildRGXStep3(occursAtLeast(text, min)),
   occursBetween: (min: number, max: number) =>
     buildRGXStep3(occursBetween(text, min, max)),
-});
-
-const buildRGXStep2 = (text: string) => ({
-  ...createRGXUnit(text),
-  //options without and
-  ...step2Options(text),
-  ...step3Options(text),
-  ...step4Options(text),
-  ...step5Options(text),
 });
 
 // step 1 - or

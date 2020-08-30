@@ -109,7 +109,6 @@ export const atStart: ModifyText = (text) => withNonCaptureGrouping(`^${text}`);
 export const atEnd: ModifyText = (text) => withNonCaptureGrouping(`${text}$`);
 
 const formatText = {
-  //then,
   or,
   occurs,
   doesNotOccur,
