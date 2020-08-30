@@ -23,29 +23,26 @@ import {
 //// Type Settings for RGX constructor ////
 
 // constructor arguments that accept unescaped strings or escaped RGX units
-export type NewText = string | RGXUnit | PresetUnit;
-export type ExtraText = (string | RGXUnit | PresetUnit)[];
+export type NewText = string | RGXUnit;
+export type ExtraText = (string | RGXUnit)[];
 
 // minimal interface for RGX units
-interface RGXBaseUnit extends PresetUnit {
-  construct: (...flags: string[]) => RegExp;
-}
-
-interface PresetUnit {
+interface RGXBaseUnit {
   text: string;
   escaped: boolean;
+  construct: (...flags: string[]) => RegExp;
 }
 
 // RGX unit at step 1 with all options available
 // including AndOptions methods inside of and external to 'and' wrapper
-interface RGXUnit extends RGXBaseUnit, AndOptions {
+export interface RGXUnit extends RGXBaseUnit, AndOptions {
   or?: (newText: NewText, ...extra: ExtraText) => RGXUnit;
-  occurs?: (amount: number) => AndWrapper;
+  occurs?: (amount: number) => RGXUnit;
   doesNotOccur?: RGXUnit;
-  occursOnceOrMore?: AndWrapper;
-  occursZeroOrMore?: AndWrapper;
-  occursAtLeast?: (min: number) => AndWrapper;
-  occursBetween?: (min: number, max: number) => AndWrapper;
+  occursOnceOrMore?: RGXUnit;
+  occursZeroOrMore?: RGXUnit;
+  occursAtLeast?: (min: number) => RGXUnit;
+  occursBetween?: (min: number, max: number) => RGXUnit;
   // And options without wrapper from AndOptions extension
   and?: AndOptions;
 }
@@ -53,16 +50,16 @@ interface RGXUnit extends RGXBaseUnit, AndOptions {
 // RGX consturctor methods that may be wrapped in 'and' object
 // for improved readability
 interface AndOptions {
-  followedBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
-  notFollowedBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
-  precededBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
-  notPrecededBy?: (newText: NewText, ...extra: ExtraText) => AndWrapper;
-  isGreedy?: AndWrapper;
-  atStart?: AndWrapper;
-  atEnd?: AndWrapper | RGXUnit;
-  isOptional?: AndWrapper | RGXUnit;
-  isCaptured?: AndWrapper | RGXUnit;
-  isVariable?: AndWrapper | RGXUnit;
+  followedBy?: (newText: NewText, ...extra: ExtraText) => RGXUnit;
+  notFollowedBy?: (newText: NewText, ...extra: ExtraText) => RGXUnit;
+  precededBy?: (newText: NewText, ...extra: ExtraText) => RGXUnit;
+  notPrecededBy?: (newText: NewText, ...extra: ExtraText) => RGXUnit;
+  isGreedy?: RGXUnit;
+  atStart?: RGXUnit;
+  atEnd?: RGXUnit;
+  isOptional?: RGXUnit;
+  isCaptured?: RGXUnit;
+  isVariable?: RGXUnit;
 }
 
 // wrapping AndOptions in 'and' object and joining with base RGX unit

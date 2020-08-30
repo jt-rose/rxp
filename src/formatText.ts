@@ -1,28 +1,29 @@
 import uniqid from "uniqid";
+import { RGXUnit } from "./init";
 
-// Text Objects
+// RGX Units //
 // user-submitted strings will be formatted to escape special characters
-// already formatted strings will be stored in text objects to distinguish them
-// a combination of user-strings and text objects can be submitted to text-transformation functions
-// so these will be parsed before running the function
-
-interface TextObject {
-  //collision issue?
-  text: string;
-  escaped: boolean;
-}
+// already formatted strings will be stored in RGX Units to distinguish them
+// a combination of user-strings and RGX Units can be submitted
+// to text-transform functions and will be parsed before running the function
 
 // format user-submitted strings to escape special characters
 export const formatRegex: ModifyText = (text) =>
   text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 
-// Text Transformations
-// the following functions transform the given strings to match the regex command
+// Text Transformations //
+// the following functions transform a given string
+// and add regex behavior markers to it
 type ModifyText = (text: string) => string;
 type CombineText = (
   text: string,
-  newText: string | TextObject,
-  ...extra: (string | TextObject)[]
+  newText: string,
+  ...extra: string[]
+) => string;
+type CombineTextWithRGXUnits = (
+  text: string,
+  newText: string | RGXUnit,
+  ...extra: (string | RGXUnit)[]
 ) => string;
 type SetFrequency = (text: string, amount: number) => string;
 type SetRange = (text: string, min: number, max: number) => string;
@@ -30,15 +31,15 @@ type SetRange = (text: string, min: number, max: number) => string;
 // wrap regex text in a non-capture grouping
 export const withNonCaptureGrouping = (text: string): string => `(?:${text})`;
 
-// receieve string or TextObject and format text accordingly
-type ParseText = (text: string | TextObject) => string;
+// receieve string or RGXUnit and format text accordingly
+type ParseText = (text: string | RGXUnit) => string;
 export const parseText: ParseText = (text) =>
   typeof text === "string"
     ? withNonCaptureGrouping(formatRegex(text))
     : text.text;
 
 // wrap args in parseText function to handle different data types
-type TextParsingHOF = (func: CombineText) => CombineText;
+type TextParsingHOF = (func: CombineText) => CombineTextWithRGXUnits;
 const withTextParsing: TextParsingHOF = (func) => (text, newText, ...extra) => {
   const parsedNewText = parseText(newText);
   const parsedExtra = extra.map(parseText);
@@ -48,10 +49,6 @@ const withTextParsing: TextParsingHOF = (func) => (text, newText, ...extra) => {
 export const or = withTextParsing((text, newText, ...extra) =>
   withNonCaptureGrouping([text, newText, ...extra].join("|"))
 ); // the initial text will already be parsed by the 'init' function
-
-/*export const then = withTextParsing((text, newText, ...extra) =>
-  withNonCaptureGrouping([text, newText, ...extra].join(""))
-);*/
 
 export const isOptional: ModifyText = (text) =>
   withNonCaptureGrouping(`${text}?`); // add grouping?
