@@ -8,6 +8,9 @@ import init, {
   IsOptionalOptions,
 } from "./init";
 
+// Provide shorthand functions to improve readability
+// for common regex constructions
+
 const either = (
   firstOption: NewText,
   secondOption: NewText,
@@ -18,10 +21,12 @@ const oneOrMore = (
   text: NewText,
   ...extra: ExtraText
 ): RGXStep3WithGreedyConverter => init(text, ...extra).occursOnceOrMore;
+
 const zeroOrMore = (
   text: NewText,
   ...extra: ExtraText
 ): RGXStep3WithGreedyConverter => init(text, ...extra).occursZeroOrMore;
+
 const noOccurenceOf = (
   text: NewText,
   ...extra: ExtraText
@@ -41,6 +46,10 @@ const upperOrLowerCase = (letter: string): RGXStep1 => {
   return init(upper).or(lower);
 };
 
+// returns a new function that will set up an RGX unit
+// wrapped between other text. For example:
+// const withParentheses = wrapRGX("(", ")")
+// will allow withParentheses("sample") to return init("(sample)")
 const wrapRGX = (before: NewText, after: NewText) => (
   wrappedItem: NewText,
   ...extra: ExtraText

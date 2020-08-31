@@ -31,7 +31,7 @@ type SetRange = (text: string, min: number, max: number) => string;
 // wrap regex text in a non-capture grouping
 export const withNonCaptureGrouping = (text: string): string => `(?:${text})`;
 
-// receieve string or RGXUnit and format text accordingly
+// receive string or RGXUnit and format text accordingly
 type ParseText = (text: string | RGXUnit) => string;
 export const parseText: ParseText = (text) =>
   typeof text === "string"
@@ -51,7 +51,7 @@ export const or = withTextParsing((text, newText, ...extra) =>
 ); // the initial text will already be parsed by the 'init' function
 
 export const isOptional: ModifyText = (text) =>
-  withNonCaptureGrouping(`${text}?`); // add grouping?
+  withNonCaptureGrouping(`${text}?`);
 
 export const occurs: SetFrequency = (text, amount) =>
   withNonCaptureGrouping(`${text}{${amount}}`);

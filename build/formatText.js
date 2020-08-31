@@ -1,41 +1,51 @@
 "use strict";
-// Text Objects
-// user-submitted strings will be formatted to escape special characters
-// already formatted strings will be stored in text objects to distinguish them
-// a combination of user-strings and text objects can be submitted to text-transformation functions
-// so these will be parsed before running the function
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.atEnd = exports.atStart = exports.isCaptured = exports.notPrecededBy = exports.precededBy = exports.notFollowedBy = exports.followedBy = exports.occursBetween = exports.occursZeroOrMore = exports.occursOnceOrMore = exports.occursAtLeast = exports.doesNotOccur = exports.occurs = exports.isOptional = exports.then = exports.or = exports.parseText = exports.formatRegex = void 0;
+exports.atEnd = exports.atStart = exports.isVariable = exports.isCaptured = exports.notPrecededBy = exports.precededBy = exports.notFollowedBy = exports.followedBy = exports.convertToGreedySearch = exports.occursBetween = exports.occursZeroOrMore = exports.occursOnceOrMore = exports.occursAtLeast = exports.doesNotOccur = exports.occurs = exports.isOptional = exports.or = exports.parseText = exports.withNonCaptureGrouping = exports.formatRegex = void 0;
+const uniqid_1 = __importDefault(require("uniqid"));
+// RGX Units //
+// user-submitted strings will be formatted to escape special characters
+// already formatted strings will be stored in RGX Units to distinguish them
+// a combination of user-strings and RGX Units can be submitted
+// to text-transform functions and will be parsed before running the function
 // format user-submitted strings to escape special characters
 exports.formatRegex = (text) => text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 // wrap regex text in a non-capture grouping
-const withNonCaptureGrouping = (text) => `(?:${text})`;
+exports.withNonCaptureGrouping = (text) => `(?:${text})`;
 exports.parseText = (text) => typeof text === "string"
-    ? withNonCaptureGrouping(exports.formatRegex(text))
+    ? exports.withNonCaptureGrouping(exports.formatRegex(text))
     : text.text;
 const withTextParsing = (func) => (text, newText, ...extra) => {
     const parsedNewText = exports.parseText(newText);
     const parsedExtra = extra.map(exports.parseText);
     return func(text, parsedNewText, ...parsedExtra);
 };
-exports.or = withTextParsing((text, newText, ...extra) => withNonCaptureGrouping([text, newText, ...extra].join("|")));
-exports.then = withTextParsing((text, newText, ...extra) => withNonCaptureGrouping([text, newText, ...extra].join("")));
-exports.isOptional = (text) => `${text}?`; // add grouping?
-exports.occurs = (text, amount) => `${text}{${amount}}`;
-exports.doesNotOccur = (text) => `[^${text}]`;
-exports.occursAtLeast = (text, min) => `${text}{${min},}`;
-exports.occursOnceOrMore = (text) => `${text}+`;
-exports.occursZeroOrMore = (text) => `${text}*`;
-exports.occursBetween = (text, min, max) => `${text}{${min},${max}}`;
-exports.followedBy = withTextParsing((text, following, ...extra) => `${text}${[following, ...extra].map((x) => `(?=${x})`).join("")}`); // grouping still work?
-exports.notFollowedBy = withTextParsing((text, notFollowing, ...extra) => `${text}${[notFollowing, ...extra].map((x) => `(?!${x})`).join("")}`);
-exports.precededBy = withTextParsing((text, preceding, ...extra) => `${[preceding, ...extra].map((x) => `(?<=${x})`).join("")}${text}`);
-exports.notPrecededBy = withTextParsing((text, notPreceding, ...extra) => `${[notPreceding, ...extra].map((x) => `(?<!${x})`).join("")}${text}`);
+exports.or = withTextParsing((text, newText, ...extra) => exports.withNonCaptureGrouping([text, newText, ...extra].join("|"))); // the initial text will already be parsed by the 'init' function
+exports.isOptional = (text) => exports.withNonCaptureGrouping(`${text}?`); // add grouping?
+exports.occurs = (text, amount) => exports.withNonCaptureGrouping(`${text}{${amount}}`);
+exports.doesNotOccur = (text) => exports.withNonCaptureGrouping(`[^${text}]`);
+exports.occursAtLeast = (text, min) => exports.withNonCaptureGrouping(`${text}{${min},}`);
+exports.occursOnceOrMore = (text) => exports.withNonCaptureGrouping(`${text}+?`);
+exports.occursZeroOrMore = (text) => exports.withNonCaptureGrouping(`${text}*?`);
+exports.occursBetween = (text, min, max) => exports.withNonCaptureGrouping(`${text}{${min},${max}}`);
+// converts lazy searches (+? or *?) to greedy searches (+ or *)
+// must be invoked immediately after declaring the
+// oneOrMore/ zeroOrMore transformations
+exports.convertToGreedySearch = (text) => text.replace(/\?\)$/, ")");
+exports.followedBy = withTextParsing((text, following, ...extra) => exports.withNonCaptureGrouping(`${text}${[following, ...extra].map((x) => `(?=${x})`).join("")}`));
+exports.notFollowedBy = withTextParsing((text, notFollowing, ...extra) => exports.withNonCaptureGrouping(`${text}${[notFollowing, ...extra].map((x) => `(?!${x})`).join("")}`));
+exports.precededBy = withTextParsing((text, preceding, ...extra) => exports.withNonCaptureGrouping(`${[preceding, ...extra].map((x) => `(?<=${x})`).join("")}${text}`));
+exports.notPrecededBy = withTextParsing((text, notPreceding, ...extra) => exports.withNonCaptureGrouping(`${[notPreceding, ...extra].map((x) => `(?<!${x})`).join("")}${text}`));
 exports.isCaptured = (text) => `(${text})`;
-exports.atStart = (text) => `^${text}`; // careful of grouping
-exports.atEnd = (text) => `${text}$`; // careful of grouping;
+exports.isVariable = (text) => {
+    const uniqueName = uniqid_1.default().replace(/[0-9]/g, "");
+    return `(?<${uniqueName}>${text}\\\\k<${uniqueName}>)`;
+};
+exports.atStart = (text) => exports.withNonCaptureGrouping(`^${text}`);
+exports.atEnd = (text) => exports.withNonCaptureGrouping(`${text}$`);
 const formatText = {
-    then: exports.then,
     or: exports.or,
     occurs: exports.occurs,
     doesNotOccur: exports.doesNotOccur,
@@ -51,5 +61,6 @@ const formatText = {
     atEnd: exports.atEnd,
     isOptional: exports.isOptional,
     isCaptured: exports.isCaptured,
+    isVariable: exports.isVariable,
 };
 exports.default = formatText;

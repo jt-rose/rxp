@@ -1,6 +1,8 @@
 import { buildRGXStep1, RGXStep1 } from "./init";
 import { withNonCaptureGrouping } from "./formatText";
 
+// Provide common regex tools, such as matching any number, letter, etc.
+
 const formatPreset = (presetCharacter: string) =>
   buildRGXStep1(withNonCaptureGrouping(presetCharacter));
 const formatExcept = (baseString: string) => (
@@ -13,7 +15,6 @@ const formatExcept = (baseString: string) => (
   return formatPreset(updatedBaseString);
 };
 
-//const formatPresetExcept =
 const anyCharacter = formatPreset(".");
 const anyCharacterExcept = (
   exception: string,
