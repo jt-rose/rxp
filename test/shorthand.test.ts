@@ -41,7 +41,8 @@ describe("Valid shorthand functions", () => {
     const exampleUpperOrLower = upperOrLowerCase("z");
     const expectedRGXText = "(?:(?:Z)|(?:z))";
     expect(exampleUpperOrLower.text).to.equal(expectedRGXText);
-    // test expected failure
+    expect(() => upperOrLowerCase("too many")).to.throw();
+    expect(() => upperOrLowerCase("7")).to.throw();
   });
   it("correct rgx unit resulting from 'wrapRGX' shorthand", () => {
     const wrapParentheses = wrapRGX(optional("["), optional("]"));

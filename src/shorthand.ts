@@ -1,3 +1,4 @@
+import { lettersWithAnyCase } from "./presets";
 import init, {
   NewText,
   ExtraText,
@@ -30,10 +31,15 @@ const optional = (text: NewText, ...extra: ExtraText): IsOptionalOptions =>
   init(text, ...extra).isOptional;
 
 const upperOrLowerCase = (letter: string): RGXStep1 => {
+  const confirmValidLetter =
+    letter.length === 1 && lettersWithAnyCase.match(letter);
+  if (!confirmValidLetter) {
+    throw new Error("Must provide a single upper or lower case letter");
+  }
   const upper = letter.toUpperCase();
   const lower = letter.toLowerCase();
   return init(upper).or(lower);
-}; // add enums? or error check for len > 1?
+};
 
 const wrapRGX = (before: NewText, after: NewText) => (
   wrappedItem: NewText,

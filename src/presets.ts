@@ -29,18 +29,20 @@ const anyDigit = formatPreset(anyDigitString);
 const anyDigitExcept = formatExcept(anyDigitString);
 
 // matches a single character for any lowercase letter
-const anyLowerCaseString = "[abcdefghijklmnopqrstuvwxyz]";
+const lowerCaseLetters = "abcdefghijklmnopqrstuvwxyz";
+const anyLowerCaseString = `[${lowerCaseLetters}]`;
 const anyLowerCase = formatPreset(anyLowerCaseString);
 const anyLowerCaseExcept = formatExcept(anyLowerCaseString);
 
 // matches a single character for any uppercase letter
-const anyUpperCaseString = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]";
+const upperCaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const anyUpperCaseString = `[${upperCaseLetters}]`;
 const anyUpperCase = formatPreset(anyUpperCaseString);
 const anyUpperCaseExcept = formatExcept(anyUpperCaseString);
 
 // matches a single character for any possible letter, lower or upper case
-const anyLetterString =
-  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]";
+export const lettersWithAnyCase = lowerCaseLetters + upperCaseLetters;
+const anyLetterString = `[${lettersWithAnyCase}]`;
 const anyLetter = formatPreset(anyLetterString);
 const anyLetterExcept = formatExcept(anyLetterString);
 
