@@ -1,4 +1,4 @@
-import { buildRGXStep1 } from "./init";
+import { buildRGXStep1, RGXStep1 } from "./init";
 import { withNonCaptureGrouping } from "./formatText";
 
 const formatPreset = (presetCharacter: string) =>
@@ -15,7 +15,10 @@ const formatExcept = (baseString: string) => (
 
 //const formatPresetExcept =
 const anyCharacter = formatPreset(".");
-const anyCharacterExcept = (exception: string, ...extra: string[]) => {
+const anyCharacterExcept = (
+  exception: string,
+  ...extra: string[]
+): RGXStep1 => {
   const anyExcept = `[^${[exception, ...extra].join("")}]`;
   return buildRGXStep1(withNonCaptureGrouping(anyExcept));
 };
