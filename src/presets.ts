@@ -1,10 +1,10 @@
-import { buildRGXStep1, RGXStep1 } from "./init";
+import { RGXStep1 } from "./init";
 import { withNonCaptureGrouping } from "./formatText";
 
 // Provide common regex tools, such as matching any number, letter, etc.
 
 const formatPreset = (presetCharacter: string) =>
-  buildRGXStep1(withNonCaptureGrouping(presetCharacter));
+  new RGXStep1(withNonCaptureGrouping(presetCharacter));
 const formatExcept = (baseString: string) => (
   exception: string,
   ...extra: string[]
@@ -21,7 +21,7 @@ const anyCharacterExcept = (
   ...extra: string[]
 ): RGXStep1 => {
   const anyExcept = `[^${[exception, ...extra].join("")}]`;
-  return buildRGXStep1(withNonCaptureGrouping(anyExcept));
+  return new RGXStep1(withNonCaptureGrouping(anyExcept));
 };
 
 // matches a single character for any digit

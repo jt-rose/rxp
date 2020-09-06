@@ -33,6 +33,9 @@ import {
 // which are always available and can be passed into other
 // RGX units in a composable manner
 
+// By default, RGX uses lazy searches and non-capturing groupings
+// but this behavior can be overwritten
+
 // The constructor has five steps available:
 // step 1 - or - define alternate possible text options
 // step 2 - occurs family - define frequency
@@ -40,8 +43,7 @@ import {
 // step 4 - atStart/ atEnd - check at borders of text
 // step 5 - isOptional/ Captured/ Variable - define settings of regex text
 
-// The constructor is opinionated and has some behavior
-// designed to avoid errors if possible
+// The constructor has some behavior designed to avoid errors if possible
 // The user may skip to later steps right away but not return to earlier ones
 // As the constructor moves through each step, previous steps are removed
 // and some future steps may be removed if they would cause issues
@@ -56,11 +58,16 @@ import {
 export type NewText = string | RGXUnit;
 export type ExtraText = (string | RGXUnit)[];
 
-// minimal interface for RGX units
-interface RGXBaseUnit {
+// create the base RGX unit that will form the core of the constructor
+
+export class RGXBaseUnit {
   text: string;
   escaped: boolean;
-  construct: (...flags: string[]) => RegExp;
+  constructor(text: string) {
+    this.text = text;
+    this.escaped = true;
+  }
+  construct = (...flags: string[]): RegExp => constructRGX(this.text, flags);
 }
 
 // all possible RGX units
@@ -224,297 +231,269 @@ const constructRGX = (RGXString: string, flags: string[]) => {
   return new RegExp(formatWithVariables, flagMarkers);
 };
 
-// create the base RGX unit that will form the core of the constructor
-export const createRGXUnit = (text: string): RGXBaseUnit => ({
-  text,
-  escaped: true,
-  construct: (...flags: string[]) => constructRGX(text, flags),
-});
+///////////////////////
+// RGX Modifier Options
+// the options are divided into steps
+// options provided after reaching step 3 are wrapped in 'and'
+// for improved readability
 
 // map out available constructor method options,
 // starting with step 5 since it has the least available options left
 
 // step 5 - isOptional, isCaptured, isVariable
-export interface IsOptionalOptions extends RGXBaseUnit {
+export class IsOptionalOptions extends RGXBaseUnit {
   and: {
     isCaptured: RGXBaseUnit;
   };
-}
-interface Step5Options {
-  isOptional: IsOptionalOptions;
-  isCaptured: {
-    text: string;
-    escaped: boolean;
-    construct: (...flags: string[]) => RegExp;
-    and: {
-      isOptional: RGXBaseUnit;
-      isVariable: RGXBaseUnit;
+  constructor(text: string) {
+    super(text);
+    this.and = {
+      get isCaptured() {
+        return new RGXBaseUnit(isCaptured(text));
+      },
     };
-  };
-  isVariable: {
-    text: string;
-    escaped: boolean;
-    construct: (...flags: string[]) => RegExp;
-    and: {
-      isOptional: RGXBaseUnit;
+  }
+}
+class Step5Options {
+  protected _text: string;
+
+  constructor(text: string) {
+    this._text = text;
+  }
+  get isOptional() {
+    return new IsOptionalOptions(isOptional(this._text));
+  }
+  get isCaptured() {
+    return {
+      ...new RGXBaseUnit(isCaptured(this._text)),
+      and: {
+        isOptional: new RGXBaseUnit(isOptional(isCaptured(this._text))),
+        isVariable: new RGXBaseUnit(isVariable(isCaptured(this._text))),
+      },
     };
-  };
-}
-const step5Options = (text: string): Step5Options => ({
-  isOptional: {
-    // isVariable not used with isOptional
-    ...createRGXUnit(isOptional(text)),
-    and: {
-      isCaptured: {
-        ...createRGXUnit(isCaptured(isOptional(text))),
+  }
+  get isVariable() {
+    return {
+      ...new RGXBaseUnit(isVariable(this._text)),
+      and: {
+        isOptional: new IsOptionalOptions(isOptional(isVariable(this._text))),
       },
-    },
-  },
-  isCaptured: {
-    ...createRGXUnit(isCaptured(text)),
-    and: {
-      isOptional: {
-        ...createRGXUnit(isOptional(isCaptured(text))),
-      },
-      isVariable: {
-        ...createRGXUnit(isVariable(isCaptured(text))),
-      },
-    },
-  },
-  isVariable: {
-    ...createRGXUnit(isVariable(text)),
-    and: {
-      // isCaptured should be initialized before
-      isOptional: {
-        ...createRGXUnit(isOptional(isVariable(text))),
-      },
-    },
-  },
-});
-
-interface RGXStep5 extends RGXBaseUnit {
-  and: Step5Options;
-}
-const buildRGXStep5 = (text: string): RGXStep5 => ({
-  ...createRGXUnit(text),
-  and: step5Options(text),
-});
-
-interface Step4Options {
-  atStart: RGXStep5;
-  atEnd: RGXStep5;
+    };
+  }
 }
 
 // Branching step 4 options - atStart, atEnd
-const step4Options = (text: string): Step4Options => ({
-  atStart: buildRGXStep5(atStart(text)),
-  atEnd: buildRGXStep5(atEnd(text)),
-});
-
-export interface RGXStep4WithoutStep5 extends RGXBaseUnit {
-  atStart: RGXBaseUnit;
-  atEnd: RGXBaseUnit;
+class Step4Options extends Step5Options {
+  constructor(text: string) {
+    super(text);
+  }
+  get atStart() {
+    return new RGXStep5(atStart(this._text));
+  }
+  get atEnd() {
+    return new RGXStep5(atEnd(this._text));
+  }
 }
-const buildRGXStep4WithoutStep5 = (text: string): RGXStep4WithoutStep5 => ({
-  ...createRGXUnit(text),
-  atStart: {
-    ...createRGXUnit(atStart(text)),
-  },
-  atEnd: {
-    ...createRGXUnit(atEnd(text)),
-  },
-});
 
-interface And_RGXStep3WithoutStep4 extends Step5Options {
-  followedBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutStep4;
-  notFollowedBy: (
+class Step4OptionsWithoutStep5 {
+  private _text: string;
+  constructor(text: string) {
+    this._text = text;
+  }
+  get atStart() {
+    return new RGXBaseUnit(atStart(this._text));
+  }
+  get atEnd() {
+    return new RGXBaseUnit(atEnd(this._text));
+  }
+}
+
+class Step3Options extends Step4Options {
+  constructor(text: string) {
+    super(text);
+  }
+  followedBy = (newText: NewText, ...extra: ExtraText): RGXStep3WithoutAtEnd =>
+    new RGXStep3WithoutAtEnd(followedBy(this._text, newText, ...extra));
+  notFollowedBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutStep4;
-  precededBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutStep4;
-  notPrecededBy: (
+  ): RGXStep3WithoutAtEnd =>
+    new RGXStep3WithoutAtEnd(notFollowedBy(this._text, newText, ...extra));
+  precededBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutStep4;
-}
-interface RGXStep3WithoutStep4 extends RGXBaseUnit {
-  and: And_RGXStep3WithoutStep4;
-}
-// branching step 3 options - precededBy, followedBy
-const buildRGXStep3WithoutStep4 = (text: string): RGXStep3WithoutStep4 => ({
-  ...createRGXUnit(text),
-  and: {
-    followedBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(followedBy(text, newText, ...extra)),
-    notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(notFollowedBy(text, newText, ...extra)),
-    precededBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(precededBy(text, newText, ...extra)),
-    notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(notPrecededBy(text, newText, ...extra)),
-    ...step5Options(text),
-  },
-});
-
-interface And_RGXStep3WithoutAtStart extends Step5Options {
-  followedBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutStep4;
-  notFollowedBy: (
+  ): RGXStep3WithoutAtStart =>
+    new RGXStep3WithoutAtStart(precededBy(this._text, newText, ...extra));
+  notPrecededBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutStep4;
-  precededBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutAtStart;
-  notPrecededBy: (
+  ): RGXStep3WithoutAtStart =>
+    new RGXStep3WithoutAtStart(notPrecededBy(this._text, newText, ...extra));
+}
+
+class Step3OptionsWithGreedyConverter extends Step3Options {
+  constructor(text: string) {
+    super(text);
+  }
+  get isGreedy() {
+    return new RGXStep3(convertToGreedySearch(this._text));
+  }
+}
+
+class Step3OptionsWithoutStep4 extends Step5Options {
+  constructor(text: string) {
+    super(text);
+  }
+  followedBy = (newText: NewText, ...extra: ExtraText): RGXStep3WithoutStep4 =>
+    new RGXStep3WithoutStep4(followedBy(this._text, newText, ...extra));
+  notFollowedBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutAtStart;
-  atEnd: RGXStep5;
-}
-interface RGXStep3WithoutAtStart extends RGXBaseUnit {
-  and: And_RGXStep3WithoutAtStart;
-}
-const buildRGXStep3WithoutAtStart = (text: string): RGXStep3WithoutAtStart => ({
-  ...createRGXUnit(text),
-  and: {
-    followedBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(followedBy(text, newText, ...extra)),
-    notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(notFollowedBy(text, newText, ...extra)),
-    precededBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutAtStart(precededBy(text, newText, ...extra)),
-    notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutAtStart(notPrecededBy(text, newText, ...extra)),
-    atEnd: buildRGXStep5(atEnd(text)),
-    ...step5Options(text),
-  },
-});
-
-interface And_RGXStep3WithoutAtEnd extends Step5Options {
-  followedBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutAtEnd;
-  notFollowedBy: (
+  ): RGXStep3WithoutStep4 =>
+    new RGXStep3WithoutStep4(notFollowedBy(this._text, newText, ...extra));
+  precededBy = (newText: NewText, ...extra: ExtraText): RGXStep3WithoutStep4 =>
+    new RGXStep3WithoutStep4(precededBy(this._text, newText, ...extra));
+  notPrecededBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutAtEnd;
-  precededBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutStep4;
-  notPrecededBy: (
+  ): RGXStep3WithoutStep4 =>
+    new RGXStep3WithoutStep4(notPrecededBy(this._text, newText, ...extra));
+}
+
+class Step3OptionsWithoutAtStart extends Step3OptionsWithoutStep4 {
+  constructor(text: string) {
+    super(text);
+  }
+  precededBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutStep4;
-  atStart: RGXStep5;
-}
-interface RGXStep3WithoutAtEnd extends RGXBaseUnit {
-  and: And_RGXStep3WithoutAtEnd;
-}
-const buildRGXStep3WithoutAtEnd = (text: string): RGXStep3WithoutAtEnd => ({
-  ...createRGXUnit(text),
-  and: {
-    followedBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutAtEnd(followedBy(text, newText, ...extra)),
-    notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutAtEnd(notFollowedBy(text, newText, ...extra)),
-    precededBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(precededBy(text, newText, ...extra)),
-    notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
-      buildRGXStep3WithoutStep4(notPrecededBy(text, newText, ...extra)),
-    atStart: buildRGXStep5(atStart(text)),
-    ...step5Options(text),
-  },
-});
-
-interface Step3Options {
-  followedBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutAtEnd;
-  notFollowedBy: (
+  ): RGXStep3WithoutAtStart =>
+    new RGXStep3WithoutAtStart(precededBy(this._text, newText, ...extra));
+  notPrecededBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutAtEnd;
-  precededBy: (newText: NewText, ...extra: ExtraText) => RGXStep3WithoutAtStart;
-  notPrecededBy: (
+  ): RGXStep3WithoutAtStart =>
+    new RGXStep3WithoutAtStart(notPrecededBy(this._text, newText, ...extra));
+  get atEnd() {
+    return new RGXStep5(atEnd(this._text));
+  }
+}
+
+class Step3OptionsWithoutAtEnd extends Step3OptionsWithoutStep4 {
+  constructor(text: string) {
+    super(text);
+  }
+  followedBy = (newText: NewText, ...extra: ExtraText): RGXStep3WithoutAtEnd =>
+    new RGXStep3WithoutAtEnd(followedBy(this._text, newText, ...extra));
+  notFollowedBy = (
     newText: NewText,
     ...extra: ExtraText
-  ) => RGXStep3WithoutAtStart;
+  ): RGXStep3WithoutAtEnd =>
+    new RGXStep3WithoutAtEnd(notFollowedBy(this._text, newText, ...extra));
+  get atStart() {
+    return new RGXStep5(atStart(this._text));
+  }
 }
-const step3Options = (text: string): Step3Options => ({
-  followedBy: (newText: NewText, ...extra: ExtraText) =>
-    buildRGXStep3WithoutAtEnd(followedBy(text, newText, ...extra)),
-  notFollowedBy: (newText: NewText, ...extra: ExtraText) =>
-    buildRGXStep3WithoutAtEnd(notFollowedBy(text, newText, ...extra)),
-  precededBy: (newText: NewText, ...extra: ExtraText) =>
-    buildRGXStep3WithoutAtStart(precededBy(text, newText, ...extra)),
-  notPrecededBy: (newText: NewText, ...extra: ExtraText) =>
-    buildRGXStep3WithoutAtStart(notPrecededBy(text, newText, ...extra)),
-});
 
-interface And_RGXStep3 extends Step3Options, Step4Options, Step5Options {}
-interface RGXStep3 extends RGXBaseUnit {
-  and: And_RGXStep3;
-}
-const buildRGXStep3 = (text: string): RGXStep3 => ({
-  ...createRGXUnit(text),
-  and: {
-    ...step3Options(text),
-    ...step4Options(text),
-    ...step5Options(text),
-  },
-});
+// after step 1 'or' is called, it can be called again
+// such as init("sample").or("other").or("maybe a third")
+// all subsequent steps are included
+// and step 2 immediately moves to step 3
+// so the step 2 options are included in RGXStep1 class
+// and no RGXStep2 constructor is needed
 
-interface And_RGXStep3WithGreedyConverter
-  extends Step3Options,
-    Step4Options,
-    Step5Options {
-  isGreedy: RGXStep3;
+export class RGXStep1 extends Step3Options {
+  text: string;
+  escaped: boolean;
+  construct: (...flags: string[]) => RegExp;
+  constructor(text: string) {
+    super(text);
+    const baseUnit = new RGXBaseUnit(text);
+    this.text = baseUnit.text;
+    this.escaped = baseUnit.escaped;
+    this.construct = baseUnit.construct;
+  }
+  // step 1 method - or
+  or = (newText: NewText, ...extra: ExtraText): RGXStep1 =>
+    new RGXStep1(or(this.text, newText, ...extra));
+  //step 2 methods - occurs
+  occurs = (amount: number): RGXStep3 =>
+    new RGXStep3(occurs(this.text, amount));
+  get doesNotOccur(): RGXStep4WithoutStep5 {
+    return new RGXStep4WithoutStep5(doesNotOccur(this.text));
+  }
+  get occursOnceOrMore(): RGXStep3WithGreedyConverter {
+    return new RGXStep3WithGreedyConverter(occursOnceOrMore(this.text));
+  }
+  get occursZeroOrMore(): RGXStep3WithGreedyConverter {
+    return new RGXStep3WithGreedyConverter(occursZeroOrMore(this.text));
+  }
+  occursAtLeast = (min: number): RGXStep3 =>
+    new RGXStep3(occursAtLeast(this.text, min));
+  occursBetween = (min: number, max: number): RGXStep3 =>
+    new RGXStep3(occursBetween(this.text, min, max));
 }
-export interface RGXStep3WithGreedyConverter extends RGXBaseUnit {
-  and: And_RGXStep3WithGreedyConverter;
-}
-// step 2.5 options => modify lazy searches to greedy searches
-const buildRGXStep3WithGreedyConverter = (
-  text: string
-): RGXStep3WithGreedyConverter => ({
-  ...createRGXUnit(text),
-  and: {
-    isGreedy: buildRGXStep3(convertToGreedySearch(text)),
-    ...step3Options(text),
-    ...step4Options(text),
-    ...step5Options(text),
-  },
-});
 
-interface Step2Options {
-  occurs: (amount: number) => RGXStep3;
-  doesNotOccur: RGXStep4WithoutStep5;
-  occursOnceOrMore: RGXStep3WithGreedyConverter;
-  occursZeroOrMore: RGXStep3WithGreedyConverter;
-  occursAtLeast: (min: number) => RGXStep3;
-  occursBetween: (min: number, max: number) => RGXStep3;
-}
-// step 2 options - occurs family
-const step2Options = (text: string): Step2Options => ({
-  occurs: (amount: number) => buildRGXStep3(occurs(text, amount)),
-  doesNotOccur: buildRGXStep4WithoutStep5(doesNotOccur(text)),
-  occursOnceOrMore: buildRGXStep3WithGreedyConverter(occursOnceOrMore(text)),
-  occursZeroOrMore: buildRGXStep3WithGreedyConverter(occursZeroOrMore(text)),
-  occursAtLeast: (min: number) => buildRGXStep3(occursAtLeast(text, min)),
-  occursBetween: (min: number, max: number) =>
-    buildRGXStep3(occursBetween(text, min, max)),
-});
+export type OptionsFromStep3To5 =
+  | Step3Options
+  | Step3OptionsWithGreedyConverter
+  | Step3OptionsWithoutAtStart
+  | Step3OptionsWithoutAtEnd
+  | Step3OptionsWithoutStep4
+  | Step4Options
+  | Step4OptionsWithoutStep5
+  | Step5Options;
 
-export interface RGXStep1
-  extends RGXBaseUnit,
-    Step2Options,
-    Step3Options,
-    Step4Options,
-    Step5Options {
-  or: (newText: NewText, ...extra: ExtraText) => RGXStep1;
+class RGXStep3 extends RGXBaseUnit {
+  and: Step3Options;
+  constructor(text: string) {
+    super(text);
+    this.and = new Step3Options(text);
+  }
 }
-// step 1 - or
-export const buildRGXStep1 = (text: string): RGXStep1 => ({
-  ...createRGXUnit(text),
-  or: (newText: NewText, ...extra: ExtraText) =>
-    buildRGXStep1(or(text, newText, ...extra)),
-  ...step2Options(text),
-  ...step3Options(text),
-  ...step4Options(text),
-  ...step5Options(text),
-});
+
+export class RGXStep3WithGreedyConverter extends RGXBaseUnit {
+  and: Step3OptionsWithGreedyConverter;
+  constructor(text: string) {
+    super(text);
+    this.and = new Step3OptionsWithGreedyConverter(text);
+  }
+}
+class RGXStep3WithoutAtStart extends RGXBaseUnit {
+  and: Step3OptionsWithoutAtStart;
+  constructor(text: string) {
+    super(text);
+    this.and = new Step3OptionsWithoutAtStart(text);
+  }
+}
+class RGXStep3WithoutAtEnd extends RGXBaseUnit {
+  and: Step3OptionsWithoutAtEnd;
+  constructor(text: string) {
+    super(text);
+    this.and = new Step3OptionsWithoutAtEnd(text);
+  }
+}
+class RGXStep3WithoutStep4 extends RGXBaseUnit {
+  and: Step3OptionsWithoutStep4;
+  constructor(text: string) {
+    super(text);
+    this.and = new Step3OptionsWithoutStep4(text);
+  }
+}
+export class RGXStep4WithoutStep5 extends RGXBaseUnit {
+  and: Step4OptionsWithoutStep5;
+  constructor(text: string) {
+    super(text);
+    this.and = new Step4OptionsWithoutStep5(text);
+  }
+}
+class RGXStep5 extends RGXBaseUnit {
+  and: Step5Options;
+  constructor(text: string) {
+    super(text);
+    this.and = new Step5Options(text);
+  }
+}
 
 // initialize RGX constructor, accepting a series
 // of unescaped strings or escaped RGX units
@@ -524,7 +503,7 @@ const init = (text: NewText, ...extra: ExtraText): RGXStep1 => {
   // apply nonCaptureGrouping if more than one arg given
   const textWithGrouping =
     extra.length > 0 ? withNonCaptureGrouping(formattedText) : formattedText;
-  return buildRGXStep1(textWithGrouping);
+  return new RGXStep1(textWithGrouping);
 };
 
 export default init;
