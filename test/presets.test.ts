@@ -26,6 +26,7 @@ describe("Valid creation of RGX presets", () => {
   });
   it("correct creation of 'anyDigitExcept' preset", () => {
     expect(anyDigitExcept("3", "6", "9").text).to.equal("(?:[0124578])");
+    expect(() => anyDigitExcept("A")).to.throw();
   });
   it("correct creation of 'anyLowerCase' preset", () => {
     expect(anyLowerCase.text).to.equal("(?:[abcdefghijklmnopqrstuvwxyz])");
@@ -34,6 +35,7 @@ describe("Valid creation of RGX presets", () => {
     expect(anyLowerCaseExcept("b", "d", "z").text).to.equal(
       "(?:[acefghijklmnopqrstuvwxy])"
     );
+    expect(() => anyLowerCaseExcept("8")).to.throw();
   });
   it("correct creation of 'anyUpperCase' preset", () => {
     expect(anyUpperCase.text).to.equal("(?:[ABCDEFGHIJKLMNOPQRSTUVWXYZ])");
@@ -42,6 +44,7 @@ describe("Valid creation of RGX presets", () => {
     expect(anyUpperCaseExcept("A", "C", "E").text).to.equal(
       "(?:[BDFGHIJKLMNOPQRSTUVWXYZ])"
     );
+    expect(() => anyUpperCaseExcept("8")).to.throw();
   });
   it("correct creation of 'anyLetter' preset", () => {
     expect(anyLetter.text).to.equal(
@@ -52,5 +55,6 @@ describe("Valid creation of RGX presets", () => {
     expect(anyLetterExcept("a", "A", "c", "C").text).to.equal(
       "(?:[bdefghijklmnopqrstuvwxyzBDEFGHIJKLMNOPQRSTUVWXYZ])"
     );
+    expect(() => anyLetterExcept("8")).to.throw();
   });
 });

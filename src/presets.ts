@@ -9,7 +9,16 @@ const formatExcept = (baseString: string) => (
   exception: string,
   ...extra: string[]
 ) => {
-  const lettersToRemove = [exception, ...extra].join("");
+  const allExceptions = [exception, ...extra];
+  const invalidCharacters = allExceptions.filter(
+    (x) => !baseString.includes(x)
+  );
+  if (invalidCharacters.length > 0) {
+    throw new Error(
+      `The characters ${invalidCharacters} are not valid for removal from this RGX unit. Only the following characters may be provided for removal: ${baseString}`
+    );
+  }
+  const lettersToRemove = allExceptions.join("");
   const removeRegex = new RegExp(`[${lettersToRemove}]`, "g");
   const updatedBaseString = baseString.replace(removeRegex, "");
   return formatPreset(updatedBaseString);

@@ -238,244 +238,244 @@ describe("", () => {
         findKeysAndGetters(testPrecededBy.and.followedBy("after").and)
       ).to.have.same.members(step3KeysAfterAndWithoutStep4);
     });
-    describe("RGX Step 4 - atStart, atEnd", () => {
-      const sample = init("sample");
-      const testAtStart = sample.atStart;
-      const testAtEnd = sample.atEnd;
-      it("valid transformation of text", () => {
-        expect(testAtStart.text).to.equal("(?:^(?:sample))");
-        expect(testAtEnd.text).to.equal("(?:(?:sample)$)");
-      });
-      it("valid RGX method options after step 4 options", () => {
-        expect(findKeysAndGetters(testAtStart)).to.have.same.members(step4Keys);
-        expect(findKeysAndGetters(testAtStart.and)).to.have.same.members(
-          onlyStep5Keys
-        );
-        expect(findKeysAndGetters(testAtEnd)).to.have.same.members(step4Keys);
-        expect(findKeysAndGetters(testAtEnd.and)).to.have.same.members(
-          onlyStep5Keys
-        );
-      });
+  });
+  describe("RGX Step 4 - atStart, atEnd", () => {
+    const sample = init("sample");
+    const testAtStart = sample.atStart;
+    const testAtEnd = sample.atEnd;
+    it("valid transformation of text", () => {
+      expect(testAtStart.text).to.equal("(?:^(?:sample))");
+      expect(testAtEnd.text).to.equal("(?:(?:sample)$)");
     });
-    describe("RGX Step 5 - settings", () => {
-      const sample = init("sample");
-      const testIsOptional = sample.isOptional;
-      const testIsOptionalAndCaptured = testIsOptional.and.isCaptured;
-      const testIsCaptured = sample.isCaptured;
-      const testIsCapturedAndOptional = testIsCaptured.and.isOptional;
-      const testIsCapturedAndVariable = testIsCaptured.and.isVariable;
-      const testIsVariable = sample.isVariable;
-      it("valid transformation of text", () => {
-        expect(testIsOptional.text).to.equal("(?:(?:sample)?)");
-        expect(testIsOptionalAndCaptured.text).to.equal("((?:(?:sample)?))");
-
-        expect(testIsCaptured.text).to.equal("((?:sample))");
-        expect(testIsCapturedAndOptional.text).to.equal("(?:((?:sample))?)");
-        const correctCaptureAndVariable = /\(\?<.+>\(\(\?:sample\)\)\\\\k<.+?>\)/.test(
-          testIsCapturedAndVariable.text
-        );
-        expect(correctCaptureAndVariable).to.be.true;
-
-        const correctVariableTransformation = /\(\?<.+>\(\?:sample\)\\\\k<.+?>\)/.test(
-          testIsVariable.text
-        );
-        expect(correctVariableTransformation).to.be.true;
-      });
-      it("valid RGX method options after step 5 options", () => {
-        expect(findKeysAndGetters(testIsOptional)).to.have.same.members(
-          step5Keys
-        );
-        expect(typeof testIsOptional.and.isCaptured.text).to.equal("string");
-        expect(
-          findKeysAndGetters(testIsOptionalAndCaptured)
-        ).to.have.same.members(everyStepKeys);
-
-        expect(findKeysAndGetters(testIsCaptured)).to.have.same.members(
-          step5Keys
-        );
-        expect(typeof testIsCaptured.and.isOptional.text).to.equal("string");
-        expect(typeof testIsCaptured.and.isVariable.text).to.equal("string");
-        expect(
-          findKeysAndGetters(testIsCapturedAndOptional)
-        ).to.have.same.members(everyStepKeys);
-        expect(
-          findKeysAndGetters(testIsCapturedAndVariable)
-        ).to.have.same.members(everyStepKeys);
-
-        expect(findKeysAndGetters(testIsVariable)).to.have.same.members(
-          step5Keys
-        );
-      });
+    it("valid RGX method options after step 4 options", () => {
+      expect(findKeysAndGetters(testAtStart)).to.have.same.members(step4Keys);
+      expect(findKeysAndGetters(testAtStart.and)).to.have.same.members(
+        onlyStep5Keys
+      );
+      expect(findKeysAndGetters(testAtEnd)).to.have.same.members(step4Keys);
+      expect(findKeysAndGetters(testAtEnd.and)).to.have.same.members(
+        onlyStep5Keys
+      );
     });
-    describe("RGX Final Step - constructor", () => {
-      // samples for testing
-      const sample = init("sample");
-      const sampleConstruct = sample.construct();
-      const complexConstruct = init(sample, "2nd sample")
-        .or("other option")
-        .occurs(5)
-        .and.precededBy("before")
-        .and.atEnd.and.isCaptured.and.isOptional.construct();
+  });
+  describe("RGX Step 5 - settings", () => {
+    const sample = init("sample");
+    const testIsOptional = sample.isOptional;
+    const testIsOptionalAndCaptured = testIsOptional.and.isCaptured;
+    const testIsCaptured = sample.isCaptured;
+    const testIsCapturedAndOptional = testIsCaptured.and.isOptional;
+    const testIsCapturedAndVariable = testIsCaptured.and.isVariable;
+    const testIsVariable = sample.isVariable;
+    it("valid transformation of text", () => {
+      expect(testIsOptional.text).to.equal("(?:(?:sample)?)");
+      expect(testIsOptionalAndCaptured.text).to.equal("((?:(?:sample)?))");
 
-      const sampleVariable = init("var").isVariable;
-      const sampleWithVariables = init(
-        sampleVariable,
-        "some text",
-        sampleVariable
-      ).construct();
+      expect(testIsCaptured.text).to.equal("((?:sample))");
+      expect(testIsCapturedAndOptional.text).to.equal("(?:((?:sample))?)");
+      const correctCaptureAndVariable = /\(\?<.+>\(\(\?:sample\)\)\\\\k<.+?>\)/.test(
+        testIsCapturedAndVariable.text
+      );
+      expect(correctCaptureAndVariable).to.be.true;
 
-      // rgx-style variables
-      const rgxVar1 = "(?<varName>(?:stuff)\\\\k<varName>)";
-      const rgxVar2 = "(?<secondVar>(?:text)\\\\k<secondVar>)";
-      const rgxVar3 = "(?<thirdVar>(?:(?:last )(?:one))\\\\k<thirdVar>)";
+      const correctVariableTransformation = /\(\?<.+>\(\?:sample\)\\\\k<.+?>\)/.test(
+        testIsVariable.text
+      );
+      expect(correctVariableTransformation).to.be.true;
+    });
+    it("valid RGX method options after step 5 options", () => {
+      expect(findKeysAndGetters(testIsOptional)).to.have.same.members(
+        step5Keys
+      );
+      expect(typeof testIsOptional.and.isCaptured.text).to.equal("string");
+      expect(
+        findKeysAndGetters(testIsOptionalAndCaptured)
+      ).to.have.same.members(everyStepKeys);
 
-      //rgx-style variables nested in larger regex string
-      const singleRGXVariable = rgxVar1 + " and more " + rgxVar1;
-      const formattedSingleVariable =
-        "(?<varName>(?:stuff)) and more (\\\\k<varName>)";
-      const formattedDoubleVariable =
-        "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>)";
-      const formattedTripleVariable =
-        "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>) and yet another (?<thirdVar>(?:(?:last )(?:one))) with (\\\\k<thirdVar>)";
-      const doubleRGXVariable =
-        rgxVar1 + " and " + rgxVar2 + " with another " + rgxVar1;
-      const tripleRGXVariable =
-        doubleRGXVariable + " and yet another " + rgxVar3 + " with " + rgxVar3;
+      expect(findKeysAndGetters(testIsCaptured)).to.have.same.members(
+        step5Keys
+      );
+      expect(typeof testIsCaptured.and.isOptional.text).to.equal("string");
+      expect(typeof testIsCaptured.and.isVariable.text).to.equal("string");
+      expect(
+        findKeysAndGetters(testIsCapturedAndOptional)
+      ).to.have.same.members(everyStepKeys);
+      expect(
+        findKeysAndGetters(testIsCapturedAndVariable)
+      ).to.have.same.members(everyStepKeys);
 
-      // matching rgx variables
-      const matchSingle = getUneditedRegexVariables(singleRGXVariable);
-      const matchDouble = getUneditedRegexVariables(doubleRGXVariable);
-      const matchTriple = getUneditedRegexVariables(tripleRGXVariable);
+      expect(findKeysAndGetters(testIsVariable)).to.have.same.members(
+        step5Keys
+      );
+    });
+  });
+  describe("RGX Final Step - constructor", () => {
+    // samples for testing
+    const sample = init("sample");
+    const sampleConstruct = sample.construct();
+    const complexConstruct = init(sample, "2nd sample")
+      .or("other option")
+      .occurs(5)
+      .and.precededBy("before")
+      .and.atEnd.and.isCaptured.and.isOptional.construct();
 
-      it("valid matching of regex variables", () => {
-        expect(getUneditedRegexVariables("")).to.equal(null);
+    const sampleVariable = init("var").isVariable;
+    const sampleWithVariables = init(
+      sampleVariable,
+      "some text",
+      sampleVariable
+    ).construct();
 
-        expect(matchSingle?.length).to.equal(1);
-        expect(matchSingle?.[0]).to.equal(rgxVar1);
+    // rgx-style variables
+    const rgxVar1 = "(?<varName>(?:stuff)\\\\k<varName>)";
+    const rgxVar2 = "(?<secondVar>(?:text)\\\\k<secondVar>)";
+    const rgxVar3 = "(?<thirdVar>(?:(?:last )(?:one))\\\\k<thirdVar>)";
 
-        expect(matchDouble?.length).to.equal(2);
-        expect(matchDouble?.[0]).to.equal(rgxVar1);
-        expect(matchDouble?.[1]).to.equal(rgxVar2);
+    //rgx-style variables nested in larger regex string
+    const singleRGXVariable = rgxVar1 + " and more " + rgxVar1;
+    const formattedSingleVariable =
+      "(?<varName>(?:stuff)) and more (\\\\k<varName>)";
+    const formattedDoubleVariable =
+      "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>)";
+    const formattedTripleVariable =
+      "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>) and yet another (?<thirdVar>(?:(?:last )(?:one))) with (\\\\k<thirdVar>)";
+    const doubleRGXVariable =
+      rgxVar1 + " and " + rgxVar2 + " with another " + rgxVar1;
+    const tripleRGXVariable =
+      doubleRGXVariable + " and yet another " + rgxVar3 + " with " + rgxVar3;
 
-        expect(matchTriple?.length).to.equal(3);
-        expect(matchTriple?.[0]).to.equal(rgxVar1);
-        expect(matchTriple?.[1]).to.equal(rgxVar2);
-        expect(matchTriple?.[2]).to.equal(rgxVar3);
-      });
+    // matching rgx variables
+    const matchSingle = getUneditedRegexVariables(singleRGXVariable);
+    const matchDouble = getUneditedRegexVariables(doubleRGXVariable);
+    const matchTriple = getUneditedRegexVariables(tripleRGXVariable);
 
-      it("valid formatting of variable replacements", () => {
-        const matchSingleReplacements = formatVariableReplacements([rgxVar1]);
-        const matchDoubleReplacements = formatVariableReplacements([
-          rgxVar1,
-          rgxVar2,
-        ]);
-        const matchTripleReplacements = formatVariableReplacements([
-          rgxVar1,
-          rgxVar2,
-          rgxVar3,
-        ]);
+    it("valid matching of regex variables", () => {
+      expect(getUneditedRegexVariables("")).to.equal(null);
 
-        expect(matchSingleReplacements[0].original).to.equal(rgxVar1);
-        expect(matchSingleReplacements[0].firstUseEdit).to.equal(
-          "(?<varName>(?:stuff))"
-        );
-        expect(matchSingleReplacements[0].followingUseEdit).to.equal(
-          "(\\\\k<varName>)"
-        );
+      expect(matchSingle?.length).to.equal(1);
+      expect(matchSingle?.[0]).to.equal(rgxVar1);
 
-        expect(matchDoubleReplacements[1].original).to.equal(rgxVar2);
-        expect(matchDoubleReplacements[1].firstUseEdit).to.equal(
-          "(?<secondVar>(?:text))"
-        );
-        expect(matchDoubleReplacements[1].followingUseEdit).to.equal(
-          "(\\\\k<secondVar>)"
-        );
+      expect(matchDouble?.length).to.equal(2);
+      expect(matchDouble?.[0]).to.equal(rgxVar1);
+      expect(matchDouble?.[1]).to.equal(rgxVar2);
 
-        expect(matchTripleReplacements[2].original).to.equal(rgxVar3);
-        expect(matchTripleReplacements[2].firstUseEdit).to.equal(
-          "(?<thirdVar>(?:(?:last )(?:one)))"
-        );
-        expect(matchTripleReplacements[2].followingUseEdit).to.equal(
-          "(\\\\k<thirdVar>)"
-        );
-      });
-      it("valid updates of variables in regex string", () => {
-        const formatSingle = formatRGXVariables(singleRGXVariable);
-        const formatDouble = formatRGXVariables(doubleRGXVariable);
-        const formatTriple = formatRGXVariables(tripleRGXVariable);
-        const noVariable = "no variables here";
-        const formatNoChanges = formatRGXVariables(noVariable);
+      expect(matchTriple?.length).to.equal(3);
+      expect(matchTriple?.[0]).to.equal(rgxVar1);
+      expect(matchTriple?.[1]).to.equal(rgxVar2);
+      expect(matchTriple?.[2]).to.equal(rgxVar3);
+    });
 
-        expect(formatSingle).to.equal(formattedSingleVariable);
-        expect(formatDouble).to.equal(formattedDoubleVariable);
-        expect(formatTriple).to.equal(formattedTripleVariable);
-        expect(formatNoChanges).to.equal(noVariable);
-      });
-      it("valid RegExp formatting", () => {
-        expect(`${sampleConstruct}`).to.equal("/(?:sample)/");
-        const expectedComplexConstructString =
-          "/(?:((?:(?:(?<=(?:before))(?:(?:(?:(?:sample)(?:2nd sample))|(?:other option)){5}))$))?)/";
+    it("valid formatting of variable replacements", () => {
+      const matchSingleReplacements = formatVariableReplacements([rgxVar1]);
+      const matchDoubleReplacements = formatVariableReplacements([
+        rgxVar1,
+        rgxVar2,
+      ]);
+      const matchTripleReplacements = formatVariableReplacements([
+        rgxVar1,
+        rgxVar2,
+        rgxVar3,
+      ]);
 
-        expect(`${complexConstruct}`).to.equal(expectedComplexConstructString);
-      });
-      it("valid conversion of RegExp variable references", () => {
-        const stringRegexSample = `${sampleWithVariables}`;
-        const expectedVariableConstruct = /\/\(\?:\(\?<.+?>\(\?:var\)\)\(\?:some text\)\(\\\\k<.+?>\)\)\//.test(
-          stringRegexSample
-        );
-        const withoutVariableNames = stringRegexSample.replace(
-          /(?<=<).+?(?=>)/g,
-          ""
-        );
-        expect(expectedVariableConstruct).to.be.true;
-        expect(withoutVariableNames).to.equal(
-          "/(?:(?<>(?:var))(?:some text)(\\\\k<>))/"
-        );
-      });
-      it("valid construction of regex flags", () => {
-        // test single flag constructors
-        const testDefault = init("sample").construct("");
-        const testGlobal = init("sample").construct("g");
-        const testIgnoreCase = init("sample").construct("i");
-        const testMultiline = init("sample").construct("m");
-        const testDotAll = init("sample").construct("s");
-        const testUnicode = init("sample").construct("u");
-        const testSticky = init("sample").construct("y");
+      expect(matchSingleReplacements[0].original).to.equal(rgxVar1);
+      expect(matchSingleReplacements[0].firstUseEdit).to.equal(
+        "(?<varName>(?:stuff))"
+      );
+      expect(matchSingleReplacements[0].followingUseEdit).to.equal(
+        "(\\\\k<varName>)"
+      );
 
-        expect(`${testDefault}`).to.equal("/(?:sample)/");
-        expect(testGlobal.global).to.be.true;
-        expect(testIgnoreCase.ignoreCase).to.be.true;
-        expect(testMultiline.multiline).to.be.true;
-        expect(/s$/.test(`${testDotAll}`)).to.be.true;
-        expect(testUnicode.unicode).to.be.true;
-        expect(testSticky.sticky).to.be.true;
+      expect(matchDoubleReplacements[1].original).to.equal(rgxVar2);
+      expect(matchDoubleReplacements[1].firstUseEdit).to.equal(
+        "(?<secondVar>(?:text))"
+      );
+      expect(matchDoubleReplacements[1].followingUseEdit).to.equal(
+        "(\\\\k<secondVar>)"
+      );
 
-        // test supplied keywords
-        const testDefaultKeyWord = init("sample").construct("default");
-        const testGlobalKeyWord = init("sample").construct("global");
-        const testIgnoreCaseKeyWord = init("sample").construct("ignoreCase");
-        const testMultilineKeyWord = init("sample").construct("multiline");
-        const testDotAllKeyWord = init("sample").construct("dotAll");
-        const testUnicodeKeyWord = init("sample").construct("unicode");
-        const testStickyKeyWord = init("sample").construct("sticky");
+      expect(matchTripleReplacements[2].original).to.equal(rgxVar3);
+      expect(matchTripleReplacements[2].firstUseEdit).to.equal(
+        "(?<thirdVar>(?:(?:last )(?:one)))"
+      );
+      expect(matchTripleReplacements[2].followingUseEdit).to.equal(
+        "(\\\\k<thirdVar>)"
+      );
+    });
+    it("valid updates of variables in regex string", () => {
+      const formatSingle = formatRGXVariables(singleRGXVariable);
+      const formatDouble = formatRGXVariables(doubleRGXVariable);
+      const formatTriple = formatRGXVariables(tripleRGXVariable);
+      const noVariable = "no variables here";
+      const formatNoChanges = formatRGXVariables(noVariable);
 
-        expect(`${testDefaultKeyWord}`).to.equal("/(?:sample)/");
-        expect(testGlobalKeyWord.global).to.be.true;
-        expect(testIgnoreCaseKeyWord.ignoreCase).to.be.true;
-        expect(testMultilineKeyWord.multiline).to.be.true;
-        expect(/s$/.test(`${testDotAllKeyWord}`)).to.be.true;
-        expect(testUnicodeKeyWord.unicode).to.be.true;
-        expect(testStickyKeyWord.sticky).to.be.true;
+      expect(formatSingle).to.equal(formattedSingleVariable);
+      expect(formatDouble).to.equal(formattedDoubleVariable);
+      expect(formatTriple).to.equal(formattedTripleVariable);
+      expect(formatNoChanges).to.equal(noVariable);
+    });
+    it("valid RegExp formatting", () => {
+      expect(`${sampleConstruct}`).to.equal("/(?:sample)/");
+      const expectedComplexConstructString =
+        "/(?:((?:(?:(?<=(?:before))(?:(?:(?:(?:sample)(?:2nd sample))|(?:other option)){5}))$))?)/";
 
-        // test construction of multiple flags
-        const testMultipleFlags = init("sample").construct("g", "ignoreCase");
-        expect(testMultipleFlags.global).to.be.true;
-        expect(testMultipleFlags.ignoreCase).to.be.true;
-        expect(testMultipleFlags.unicode).to.be.false;
+      expect(`${complexConstruct}`).to.equal(expectedComplexConstructString);
+    });
+    it("valid conversion of RegExp variable references", () => {
+      const stringRegexSample = `${sampleWithVariables}`;
+      const expectedVariableConstruct = /\/\(\?:\(\?<.+?>\(\?:var\)\)\(\?:some text\)\(\\\\k<.+?>\)\)\//.test(
+        stringRegexSample
+      );
+      const withoutVariableNames = stringRegexSample.replace(
+        /(?<=<).+?(?=>)/g,
+        ""
+      );
+      expect(expectedVariableConstruct).to.be.true;
+      expect(withoutVariableNames).to.equal(
+        "/(?:(?<>(?:var))(?:some text)(\\\\k<>))/"
+      );
+    });
+    it("valid construction of regex flags", () => {
+      // test single flag constructors
+      const testDefault = init("sample").construct("");
+      const testGlobal = init("sample").construct("g");
+      const testIgnoreCase = init("sample").construct("i");
+      const testMultiline = init("sample").construct("m");
+      const testDotAll = init("sample").construct("s");
+      const testUnicode = init("sample").construct("u");
+      const testSticky = init("sample").construct("y");
 
-        // test rejection of invalid flags/ keywords
-        expect(() => init("sample").construct("whoops!")).to.throw();
-      });
+      expect(`${testDefault}`).to.equal("/(?:sample)/");
+      expect(testGlobal.global).to.be.true;
+      expect(testIgnoreCase.ignoreCase).to.be.true;
+      expect(testMultiline.multiline).to.be.true;
+      expect(/s$/.test(`${testDotAll}`)).to.be.true;
+      expect(testUnicode.unicode).to.be.true;
+      expect(testSticky.sticky).to.be.true;
+
+      // test supplied keywords
+      const testDefaultKeyWord = init("sample").construct("default");
+      const testGlobalKeyWord = init("sample").construct("global");
+      const testIgnoreCaseKeyWord = init("sample").construct("ignoreCase");
+      const testMultilineKeyWord = init("sample").construct("multiline");
+      const testDotAllKeyWord = init("sample").construct("dotAll");
+      const testUnicodeKeyWord = init("sample").construct("unicode");
+      const testStickyKeyWord = init("sample").construct("sticky");
+
+      expect(`${testDefaultKeyWord}`).to.equal("/(?:sample)/");
+      expect(testGlobalKeyWord.global).to.be.true;
+      expect(testIgnoreCaseKeyWord.ignoreCase).to.be.true;
+      expect(testMultilineKeyWord.multiline).to.be.true;
+      expect(/s$/.test(`${testDotAllKeyWord}`)).to.be.true;
+      expect(testUnicodeKeyWord.unicode).to.be.true;
+      expect(testStickyKeyWord.sticky).to.be.true;
+
+      // test construction of multiple flags
+      const testMultipleFlags = init("sample").construct("g", "ignoreCase");
+      expect(testMultipleFlags.global).to.be.true;
+      expect(testMultipleFlags.ignoreCase).to.be.true;
+      expect(testMultipleFlags.unicode).to.be.false;
+
+      // test rejection of invalid flags/ keywords
+      expect(() => init("sample").construct("whoops!")).to.throw();
     });
   });
 });
