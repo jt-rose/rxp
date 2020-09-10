@@ -1,8 +1,9 @@
 {
   "name": "rgx",
   "version": "1.0.0",
-  "description": "Descriptive constructor for regular expressions",
+  "description": "descriptive constructor for regular expressions",
   "main": "index.js",
+  "types": "index.d.ts",
   "license": "MIT",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^3.6.1",
@@ -13,7 +14,8 @@
   },
   "scripts": {
     "tsc": "tsc",
-    "test": "mocha -r ts-node/register test/*.test.ts"
+    "test": "mocha -r ts-node/register test/*.test.ts",
+    "prepublishOnly": "tsc -d"
   },
   "dependencies": {
     "@types/chai": "^4.2.11",
