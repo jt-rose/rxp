@@ -1,5 +1,5 @@
 {
-  "name": "rgx",
+  "name": "rxp",
   "version": "1.0.0",
   "description": "descriptive constructor for regular expressions",
   "main": "index.js",

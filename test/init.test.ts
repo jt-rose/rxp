@@ -1,15 +1,15 @@
 import "mocha";
 import { expect } from "chai";
 import init, {
-  RGXUnit,
+  RXPUnit,
   OptionsFromStep3To5,
-  RGXBaseUnit,
+  RXPBaseUnit,
   getUneditedRegexVariables,
   formatVariableReplacements,
-  formatRGXVariables,
+  formatRXPVariables,
 } from "../src/init";
 
-// define expected keys for each individual step of the RGX constructor
+// define expected keys for each individual step of the RXP constructor
 const everyStepKeys = ["text", "escaped", "construct"];
 const onlyStep1Keys = ["or"];
 const onlyStep2Keys = [
@@ -60,40 +60,40 @@ const allKeys = [
   ...onlyStep5Keys,
 ];
 
-// return which keys/ getters are found in an RGX object
+// return which keys/ getters are found in an RXP object
 // in is used in place of Object.keys(...) to find getters
-type RGXUnitOrOptions = RGXUnit | OptionsFromStep3To5;
-const findKeysAndGetters = (obj: RGXUnitOrOptions) => {
+type RXPUnitOrOptions = RXPUnit | OptionsFromStep3To5;
+const findKeysAndGetters = (obj: RXPUnitOrOptions) => {
   return allKeys.filter((key) => key in obj);
 };
 
 describe("", () => {
-  describe("Initialize RGX unit", () => {
+  describe("Initialize RXP unit", () => {
     it("correct escaping of submitted text", () => {
       const initialUnit = init("first step");
       expect(initialUnit.text).to.equal("(?:first step)");
       expect(initialUnit.escaped).to.be.true;
       expect(findKeysAndGetters(initialUnit)).to.have.same.members(step1Keys);
     });
-    it("correct composition of rgx units without additional escaping", () => {
-      const sampleRGXUnit = new RGXBaseUnit("(?:pre-escaped sample)");
-      const initialUnit = init(sampleRGXUnit);
+    it("correct composition of RXP units without additional escaping", () => {
+      const sampleRXPUnit = new RXPBaseUnit("(?:pre-escaped sample)");
+      const initialUnit = init(sampleRXPUnit);
       expect(initialUnit.text).to.equal("(?:pre-escaped sample)");
       expect(initialUnit.escaped).to.be.true;
       expect(findKeysAndGetters(initialUnit)).to.have.same.members(step1Keys);
     });
   });
-  describe("RGX Step 1 - 'or'", () => {
+  describe("RXP Step 1 - 'or'", () => {
     const testOr = init("sample").or("other sample");
     it("valid transformation of text", () => {
       expect(testOr.text).to.equal("(?:(?:sample)|(?:other sample))");
     });
-    it("valid RGX method options after 'or'", () => {
+    it("valid RXP method options after 'or'", () => {
       // step 1 is recursive, allowing for additional 'or' methods
       expect(findKeysAndGetters(testOr)).to.have.same.members(step1Keys);
     });
   });
-  describe("RGX Step 2 - 'occurs' grouping", () => {
+  describe("RXP Step 2 - 'occurs' grouping", () => {
     const sample = init("sample");
     const testOccurs = sample.occurs(5);
     const testDoesNotOccur = sample.doesNotOccur;
@@ -116,7 +116,7 @@ describe("", () => {
 
       expect(testOccursBetween.text).to.equal("(?:(?:sample){2,4})");
     });
-    it("valid RGX method options after 'occurs' options", () => {
+    it("valid RXP method options after 'occurs' options", () => {
       expect(findKeysAndGetters(testOccurs)).to.have.same.members(step3Keys);
       expect(findKeysAndGetters(testOccurs.and)).to.have.same.members(
         step3KeysAfterAnd
@@ -173,7 +173,7 @@ describe("", () => {
       );
     });
   });
-  describe("RGX Step 3 - 'surrounding' grouping", () => {
+  describe("RXP Step 3 - 'surrounding' grouping", () => {
     const sample = init("sample");
     const testPrecededBy = sample.precededBy("before");
     const testNotPrecededBy = sample.notPrecededBy("not before");
@@ -189,7 +189,7 @@ describe("", () => {
         "(?:(?:sample)(?!(?:not after)))"
       );
     });
-    it("valid RGX method options after 'surrounding' options", () => {
+    it("valid RXP method options after 'surrounding' options", () => {
       expect(findKeysAndGetters(testPrecededBy)).to.have.same.members(
         step3Keys
       );
@@ -239,7 +239,7 @@ describe("", () => {
       ).to.have.same.members(step3KeysAfterAndWithoutStep4);
     });
   });
-  describe("RGX Step 4 - atStart, atEnd", () => {
+  describe("RXP Step 4 - atStart, atEnd", () => {
     const sample = init("sample");
     const testAtStart = sample.atStart;
     const testAtEnd = sample.atEnd;
@@ -247,7 +247,7 @@ describe("", () => {
       expect(testAtStart.text).to.equal("(?:^(?:sample))");
       expect(testAtEnd.text).to.equal("(?:(?:sample)$)");
     });
-    it("valid RGX method options after step 4 options", () => {
+    it("valid RXP method options after step 4 options", () => {
       expect(findKeysAndGetters(testAtStart)).to.have.same.members(step4Keys);
       expect(findKeysAndGetters(testAtStart.and)).to.have.same.members(
         onlyStep5Keys
@@ -258,7 +258,7 @@ describe("", () => {
       );
     });
   });
-  describe("RGX Step 5 - settings", () => {
+  describe("RXP Step 5 - settings", () => {
     const sample = init("sample");
     const testIsOptional = sample.isOptional;
     const testIsOptionalAndCaptured = testIsOptional.and.isCaptured;
@@ -282,7 +282,7 @@ describe("", () => {
       );
       expect(correctVariableTransformation).to.be.true;
     });
-    it("valid RGX method options after step 5 options", () => {
+    it("valid RXP method options after step 5 options", () => {
       expect(findKeysAndGetters(testIsOptional)).to.have.same.members(
         step5Keys
       );
@@ -308,7 +308,7 @@ describe("", () => {
       );
     });
   });
-  describe("RGX Final Step - constructor", () => {
+  describe("RXP Final Step - constructor", () => {
     // samples for testing
     const sample = init("sample");
     const sampleConstruct = sample.construct();
@@ -325,58 +325,58 @@ describe("", () => {
       sampleVariable
     ).construct();
 
-    // rgx-style variables
-    const rgxVar1 = "(?<varName>(?:stuff)\\\\k<varName>)";
-    const rgxVar2 = "(?<secondVar>(?:text)\\\\k<secondVar>)";
-    const rgxVar3 = "(?<thirdVar>(?:(?:last )(?:one))\\\\k<thirdVar>)";
+    // RXP-style variables
+    const RXPVar1 = "(?<varName>(?:stuff)\\\\k<varName>)";
+    const RXPVar2 = "(?<secondVar>(?:text)\\\\k<secondVar>)";
+    const RXPVar3 = "(?<thirdVar>(?:(?:last )(?:one))\\\\k<thirdVar>)";
 
-    //rgx-style variables nested in larger regex string
-    const singleRGXVariable = rgxVar1 + " and more " + rgxVar1;
+    //RXP-style variables nested in larger regex string
+    const singleRXPVariable = RXPVar1 + " and more " + RXPVar1;
     const formattedSingleVariable =
       "(?<varName>(?:stuff)) and more (\\\\k<varName>)";
     const formattedDoubleVariable =
       "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>)";
     const formattedTripleVariable =
       "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>) and yet another (?<thirdVar>(?:(?:last )(?:one))) with (\\\\k<thirdVar>)";
-    const doubleRGXVariable =
-      rgxVar1 + " and " + rgxVar2 + " with another " + rgxVar1;
-    const tripleRGXVariable =
-      doubleRGXVariable + " and yet another " + rgxVar3 + " with " + rgxVar3;
+    const doubleRXPVariable =
+      RXPVar1 + " and " + RXPVar2 + " with another " + RXPVar1;
+    const tripleRXPVariable =
+      doubleRXPVariable + " and yet another " + RXPVar3 + " with " + RXPVar3;
 
-    // matching rgx variables
-    const matchSingle = getUneditedRegexVariables(singleRGXVariable);
-    const matchDouble = getUneditedRegexVariables(doubleRGXVariable);
-    const matchTriple = getUneditedRegexVariables(tripleRGXVariable);
+    // matching RXP variables
+    const matchSingle = getUneditedRegexVariables(singleRXPVariable);
+    const matchDouble = getUneditedRegexVariables(doubleRXPVariable);
+    const matchTriple = getUneditedRegexVariables(tripleRXPVariable);
 
     it("valid matching of regex variables", () => {
       expect(getUneditedRegexVariables("")).to.equal(null);
 
       expect(matchSingle?.length).to.equal(1);
-      expect(matchSingle?.[0]).to.equal(rgxVar1);
+      expect(matchSingle?.[0]).to.equal(RXPVar1);
 
       expect(matchDouble?.length).to.equal(2);
-      expect(matchDouble?.[0]).to.equal(rgxVar1);
-      expect(matchDouble?.[1]).to.equal(rgxVar2);
+      expect(matchDouble?.[0]).to.equal(RXPVar1);
+      expect(matchDouble?.[1]).to.equal(RXPVar2);
 
       expect(matchTriple?.length).to.equal(3);
-      expect(matchTriple?.[0]).to.equal(rgxVar1);
-      expect(matchTriple?.[1]).to.equal(rgxVar2);
-      expect(matchTriple?.[2]).to.equal(rgxVar3);
+      expect(matchTriple?.[0]).to.equal(RXPVar1);
+      expect(matchTriple?.[1]).to.equal(RXPVar2);
+      expect(matchTriple?.[2]).to.equal(RXPVar3);
     });
 
     it("valid formatting of variable replacements", () => {
-      const matchSingleReplacements = formatVariableReplacements([rgxVar1]);
+      const matchSingleReplacements = formatVariableReplacements([RXPVar1]);
       const matchDoubleReplacements = formatVariableReplacements([
-        rgxVar1,
-        rgxVar2,
+        RXPVar1,
+        RXPVar2,
       ]);
       const matchTripleReplacements = formatVariableReplacements([
-        rgxVar1,
-        rgxVar2,
-        rgxVar3,
+        RXPVar1,
+        RXPVar2,
+        RXPVar3,
       ]);
 
-      expect(matchSingleReplacements[0].original).to.equal(rgxVar1);
+      expect(matchSingleReplacements[0].original).to.equal(RXPVar1);
       expect(matchSingleReplacements[0].firstUseEdit).to.equal(
         "(?<varName>(?:stuff))"
       );
@@ -384,7 +384,7 @@ describe("", () => {
         "(\\\\k<varName>)"
       );
 
-      expect(matchDoubleReplacements[1].original).to.equal(rgxVar2);
+      expect(matchDoubleReplacements[1].original).to.equal(RXPVar2);
       expect(matchDoubleReplacements[1].firstUseEdit).to.equal(
         "(?<secondVar>(?:text))"
       );
@@ -392,7 +392,7 @@ describe("", () => {
         "(\\\\k<secondVar>)"
       );
 
-      expect(matchTripleReplacements[2].original).to.equal(rgxVar3);
+      expect(matchTripleReplacements[2].original).to.equal(RXPVar3);
       expect(matchTripleReplacements[2].firstUseEdit).to.equal(
         "(?<thirdVar>(?:(?:last )(?:one)))"
       );
@@ -401,11 +401,11 @@ describe("", () => {
       );
     });
     it("valid updates of variables in regex string", () => {
-      const formatSingle = formatRGXVariables(singleRGXVariable);
-      const formatDouble = formatRGXVariables(doubleRGXVariable);
-      const formatTriple = formatRGXVariables(tripleRGXVariable);
+      const formatSingle = formatRXPVariables(singleRXPVariable);
+      const formatDouble = formatRXPVariables(doubleRXPVariable);
+      const formatTriple = formatRXPVariables(tripleRXPVariable);
       const noVariable = "no variables here";
-      const formatNoChanges = formatRGXVariables(noVariable);
+      const formatNoChanges = formatRXPVariables(noVariable);
 
       expect(formatSingle).to.equal(formattedSingleVariable);
       expect(formatDouble).to.equal(formattedDoubleVariable);

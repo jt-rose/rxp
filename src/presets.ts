@@ -1,10 +1,10 @@
-import { RGXStep1 } from "./init";
+import { RXPStep1 } from "./init";
 import { withNonCaptureGrouping } from "./formatText";
 
 // Provide common regex tools, such as matching any number, letter, etc.
 
 const formatPreset = (presetCharacter: string) =>
-  new RGXStep1(withNonCaptureGrouping(presetCharacter));
+  new RXPStep1(withNonCaptureGrouping(presetCharacter));
 const formatExcept = (baseString: string) => (
   exception: string,
   ...extra: string[]
@@ -15,7 +15,7 @@ const formatExcept = (baseString: string) => (
   );
   if (invalidCharacters.length > 0) {
     throw new Error(
-      `The characters ${invalidCharacters} are not valid for removal from this RGX unit. Only the following characters may be provided for removal: ${baseString}`
+      `The characters ${invalidCharacters} are not valid for removal from this RXP unit. Only the following characters may be provided for removal: ${baseString}`
     );
   }
   const lettersToRemove = allExceptions.join("");
@@ -28,9 +28,9 @@ const anyCharacter = formatPreset(".");
 const anyCharacterExcept = (
   exception: string,
   ...extra: string[]
-): RGXStep1 => {
+): RXPStep1 => {
   const anyExcept = `[^${[exception, ...extra].join("")}]`;
-  return new RGXStep1(withNonCaptureGrouping(anyExcept));
+  return new RXPStep1(withNonCaptureGrouping(anyExcept));
 };
 
 // matches a single character for any digit

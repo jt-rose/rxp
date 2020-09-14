@@ -1,10 +1,10 @@
 import uniqid from "uniqid";
-import { RGXUnit } from "./init";
+import { RXPUnit } from "./init";
 
-// RGX Units //
+// RXP Units //
 // user-submitted strings will be formatted to escape special characters
-// already formatted strings will be stored in RGX Units to distinguish them
-// a combination of user-strings and RGX Units can be submitted
+// already formatted strings will be stored in RXP Units to distinguish them
+// a combination of user-strings and RXP Units can be submitted
 // to text-transform functions and will be parsed before running the function
 
 // format user-submitted strings to escape special characters
@@ -20,10 +20,10 @@ type CombineText = (
   newText: string,
   ...extra: string[]
 ) => string;
-type CombineTextWithRGXUnits = (
+type CombineTextWithRXPUnits = (
   text: string,
-  newText: string | RGXUnit,
-  ...extra: (string | RGXUnit)[]
+  newText: string | RXPUnit,
+  ...extra: (string | RXPUnit)[]
 ) => string;
 type SetFrequency = (text: string, amount: number) => string;
 type SetRange = (text: string, min: number, max: number) => string;
@@ -31,15 +31,15 @@ type SetRange = (text: string, min: number, max: number) => string;
 // wrap regex text in a non-capture grouping
 export const withNonCaptureGrouping = (text: string): string => `(?:${text})`;
 
-// receive string or RGXUnit and format text accordingly
-type ParseText = (text: string | RGXUnit) => string;
+// receive string or RXPUnit and format text accordingly
+type ParseText = (text: string | RXPUnit) => string;
 export const parseText: ParseText = (text) =>
   typeof text === "string"
     ? withNonCaptureGrouping(formatRegex(text))
     : text.text;
 
 // wrap args in parseText function to handle different data types
-type TextParsingHOF = (func: CombineText) => CombineTextWithRGXUnits;
+type TextParsingHOF = (func: CombineText) => CombineTextWithRXPUnits;
 const withTextParsing: TextParsingHOF = (func) => (text, newText, ...extra) => {
   const parsedNewText = parseText(newText);
   const parsedExtra = extra.map(parseText);

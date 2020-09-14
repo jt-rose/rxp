@@ -2,12 +2,12 @@ import init from "./init";
 import presets from "./presets";
 import shorthand from "./shorthand";
 
-const RGX = {
+const RXP = {
   init,
   presets,
   shorthand,
 };
-export default RGX;
+export default RXP;
 export { init, presets, shorthand };
 
 // destructure presets and shorthand and provide for export as well
@@ -43,7 +43,7 @@ const {
   noOccurenceOf,
   optional,
   upperOrLowerCase,
-  wrapRGX,
+  wrapRXP,
 } = shorthand;
 export {
   either,
@@ -52,5 +52,5 @@ export {
   noOccurenceOf,
   optional,
   upperOrLowerCase,
-  wrapRGX,
+  wrapRXP,
 };

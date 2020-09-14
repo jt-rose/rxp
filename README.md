@@ -1,16 +1,16 @@
-# RGX
+# RXP
 
 A descriptive constructor for regular expressions
 
 ### Installation
 
-`npm install rgx` / `yarn add rgx`
+`npm install rxp` / `yarn add rxp`
 
 Both a default export and named exports are supported
 
 ```javascript
-import RGX from "rgx";
-import { init, presets, either, wrapRGX } from "rgx";
+import RXP from "rxp";
+import { init, presets, either, wrapRXP } from "rxp";
 ```
 
 ### Dependencies
@@ -43,7 +43,7 @@ const ProductId = init(
 
 #### Composable, Modular Units
 
-- RGX can build regex expressions as small units that can then be reused, further modified as needed, and composed within other RGX units
+- RXP can build regex expressions as small units that can then be reused, further modified as needed, and composed within other RXP units
 
 ```javascript
 const fourDigits = anyDigit.occurs(4);
@@ -56,8 +56,8 @@ const CreditCardMatch = init(
 
 #### Convenient Shorthands and Presets
 
-- frequently used regex behavior, such as marking text optional or providing alternatives, can be quickly defined using shorthand functions that retain RGX functionality
-- common regex characters, such as `.` and `\d`, are stored as descriptive presets ("anyCharacter", "anyDigit") with full RGX functionality built in
+- frequently used regex behavior, such as marking text optional or providing alternatives, can be quickly defined using shorthand functions that retain RXP functionality
+- common regex characters, such as `.` and `\d`, are stored as descriptive presets ("anyCharacter", "anyDigit") with full RXP functionality built in
 
 ```javascript
 either("this", "that").occurs(3);
@@ -86,7 +86,7 @@ init("sample").isCaptured.text; // (sample)
 
 ## Quick Guide
 
-The RGX constructor works by accepting a string argument, escaping any special characters, and then modifying the string argument using descriptive object methods to apply wanted behavior. When the prepared regex string is ready, it can be transformed to a regex literal (`/regex/`) with any desired flags applied.
+The RXP constructor works by accepting a string argument, escaping any special characters, and then modifying the string argument using descriptive object methods to apply wanted behavior. When the prepared regex string is ready, it can be transformed to a regex literal (`/regex/`) with any desired flags applied.
 
 ```javascript
 const regexSearch = init("text", " with ", "unescaped []")
@@ -100,7 +100,7 @@ regexSearch.match("intro: text with unescaped []"); // "text with unescaped []"
 
 ##### Initialize Constructor
 
-The main `init` function is used to generate the RGX constructor. `init` accepts any number of strings, combines them in order, applies a noncapture grouping, and escapes them, storing the modified string in the `text` property.
+The main `init` function is used to generate the RXP constructor. `init` accepts any number of strings, combines them in order, applies a noncapture grouping, and escapes them, storing the modified string in the `text` property.
 
 ```javascript
 const sample = init("sample");
@@ -110,7 +110,7 @@ const escaped = init("escape ", ". and ?");
 escaped.text; // "(?:escape \\. and \\?)"
 ```
 
-The `init` function can also accept other RGX units. The full constructor object should be provided and not just the `.text` property to avoid escaping special characters a second time:
+The `init` function can also accept other RXP units. The full constructor object should be provided and not just the `.text` property to avoid escaping special characters a second time:
 
 ```javascript
 const newSample = init("combine with ", escaped);
@@ -139,7 +139,7 @@ sample.construct("global", "sticky", "i"); // => /(?:sample)/gsi
 
 ##### Presets
 
-Commonly used special characters, such as `.` and `\d`, are stored as ready-to-use RGX units (called "Presets"), which have full RGX functionality:
+Commonly used special characters, such as `.` and `\d`, are stored as ready-to-use RXP units (called "Presets"), which have full RXP functionality:
 
 ```javascript
 const sectionID = anyDigit.occurs(3).atStart;
@@ -155,7 +155,7 @@ optional("some text"); // equivalent to init("some text").isOptional
 oneOrMore("sample"); // equivalent to init("sample").occursOnceOrMore
 either("A", "B"); // equivalent to init("A").or("B")
 
-//these are especially handy for improving the readability of composed RGX units:
+//these are especially handy for improving the readability of composed RXP units:
 const regexSearch = init(
   either("(", "["),
   anyDigit.occursOnceOrMore,
@@ -170,26 +170,26 @@ const regexSearch = init(
 
 | method           | example                                   | equivalent                               |
 | ---------------- | ----------------------------------------- | ---------------------------------------- |
-| init             | `const RGXSample = init("sample")`        | escapes text and initializes constructor |
-| or               | `RGXSample.or("other sample")`            | `sample\|other sample`                   |
-| occurs           | `RGXSample.occurs(4)`                     | `(?:sample){4}`                          |
-| doesNotOccur     | `RGXSample.doesNotOccur`                  | `[^(?:sample)]`                          |
-| occursOnceOrMore | `RGXSample.occursOnceOrMore`              | `(?:sample)+?`                           |
-| occursZeroOrMore | `RGXSample.occursZeroOrMore`              | `(?:sample)\*?`                          |
-| occursAtLeast    | `RGXSample.occursAtLeast(3)`              | `(?:sample){3,}`                         |
-| occursBetween    | `RGXSample.occursBetween(2,4)`            | `(?:sample){2,4}`                        |
-| isGreedy         | `RGXSample.occursOnceOrMore.and.isGreedy` | `(?:sample)+`                            |
-| followedBy       | `RGXSample.followedBy("text")`            | `(?:sample)(?=text)`                     |
-| notFollowedBy    | `RGXSample.notFollowedBy("text")`         | `(?:sample)(?!text)`                     |
-| precededBy       | `RGXSample.precededBy("text")`            | `(?<=text)(?:sample)`                    |
-| notPrecededBy    | `RGXSample.notPrecededBy("text")`         | `(?<!text)(?:sample)`                    |
-| atStart          | `RGXSample.atStart`                       | `^(?:sample)`                            |
-| atEnd            | `RGXSample.atEnd`                         | `(?:sample)\$`                           |
-| isOptional       | `RGXSample.isOptional`                    | `(?:sample)?`                            |
-| isCaptured       | `RGXSample.isCaptured`                    | `(sample)`                               |
-| isVariable       | `RGXSample.isVariable`                    | `(?\<var>(?:sample))` -or- `//k<var>`    |
-| and              | `RGXSample.occurs(4).and.atEnd`           | `(?:(?:sample){4})$`                     |
-| construct        | `RGXSample.construct("g")`                | `/sample/g`                              |
+| init             | `const RXPSample = init("sample")`        | escapes text and initializes constructor |
+| or               | `RXPSample.or("other sample")`            | `sample\|other sample`                   |
+| occurs           | `RXPSample.occurs(4)`                     | `(?:sample){4}`                          |
+| doesNotOccur     | `RXPSample.doesNotOccur`                  | `[^(?:sample)]`                          |
+| occursOnceOrMore | `RXPSample.occursOnceOrMore`              | `(?:sample)+?`                           |
+| occursZeroOrMore | `RXPSample.occursZeroOrMore`              | `(?:sample)\*?`                          |
+| occursAtLeast    | `RXPSample.occursAtLeast(3)`              | `(?:sample){3,}`                         |
+| occursBetween    | `RXPSample.occursBetween(2,4)`            | `(?:sample){2,4}`                        |
+| isGreedy         | `RXPSample.occursOnceOrMore.and.isGreedy` | `(?:sample)+`                            |
+| followedBy       | `RXPSample.followedBy("text")`            | `(?:sample)(?=text)`                     |
+| notFollowedBy    | `RXPSample.notFollowedBy("text")`         | `(?:sample)(?!text)`                     |
+| precededBy       | `RXPSample.precededBy("text")`            | `(?<=text)(?:sample)`                    |
+| notPrecededBy    | `RXPSample.notPrecededBy("text")`         | `(?<!text)(?:sample)`                    |
+| atStart          | `RXPSample.atStart`                       | `^(?:sample)`                            |
+| atEnd            | `RXPSample.atEnd`                         | `(?:sample)\$`                           |
+| isOptional       | `RXPSample.isOptional`                    | `(?:sample)?`                            |
+| isCaptured       | `RXPSample.isCaptured`                    | `(sample)`                               |
+| isVariable       | `RXPSample.isVariable`                    | `(?\<var>(?:sample))` -or- `//k<var>`    |
+| and              | `RXPSample.occurs(4).and.atEnd`           | `(?:(?:sample){4})$`                     |
+| construct        | `RXPSample.construct("g")`                | `/sample/g`                              |
 
 #### Shorthands
 
@@ -201,11 +201,11 @@ const regexSearch = init(
 | oneOrMore        | `oneOrMore("text")`      | `init("text").occursOnceOrMore`                          |
 | zeroOrMore       | `zeroOrMore("text")`     | `init("text").occursZeroOrMore`                          |
 | upperOrLowerCase | `upperOrLowerCase("r")`  | `init("r").or("R")`                                      |
-| wrapRGX          | `wrapRGX("(", ")")`      | new function: `(innerText) => init("(", innerText, ")")` |
+| wrapRXP          | `wrapRXP("(", ")")`      | new function: `(innerText) => init("(", innerText, ")")` |
 
 #### Presets
 
-| RGX unit           | example                             | equivalent  |
+| RXP unit           | example                             | equivalent  |
 | ------------------ | ----------------------------------- | ----------- |
 | anyCharacter       | `anyCharacter`                      | .           |
 | anyCharacterExcept | `anyCharacterExcept("t", "7")`      | [^t7]       |
@@ -226,7 +226,7 @@ const regexSearch = init(
 // original regex:
 /[A-Z]{2}[a-z]+@(?:support\.)?company\.net/;
 
-//RGX version:
+//RXP version:
 const emailMatch = init(
   anyUpperCase.occurs(2),
   anyLowerCase.occursOnceOrMore,
@@ -242,7 +242,7 @@ const emailMatch = init(
 // original regex:
 /\w+\s[rR]ose/;
 
-// RGX version:
+// RXP version:
 const nameMatch = init(
   anyLetter.occursOnceOrMore,
   " ",
@@ -257,7 +257,7 @@ const nameMatch = init(
 //original regex:
 /(?<=\w{2},\s)\d{5}(?:(?:(?:-|\s)\d{4})|(?:\d{4}))?/;
 
-// RGX version:
+// RXP version:
 const stateAbbreviation = init(anyUpperCase.occurs(2), ", ");
 const zipCode = anyDigit.occurs(5);
 const extendedZipCode = anyDigit.occurs(4);
@@ -277,7 +277,7 @@ const zipCodeMatch = init(
 //original regex:
 /\(?\d{3}\)?(?:-|\s)?\d{3}(?:-|\s)?\d{4}(?:\s[eE]xt.:\s\d{2,4})?/;
 
-// RGX version:
+// RXP version:
 const areaCode = init(
   optional("("),
   anyDigit.occurs(3),

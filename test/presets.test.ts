@@ -14,7 +14,7 @@ const {
   anyLetterExcept,
 } = presets;
 
-describe("Valid creation of RGX presets", () => {
+describe("Valid creation of RXP presets", () => {
   it("correct creation of 'anyCharacter' preset", () => {
     expect(anyCharacter.text).to.equal("(?:.)");
   });

@@ -2,9 +2,9 @@ import { lettersWithAnyCase } from "./presets";
 import init, {
   NewText,
   ExtraText,
-  RGXStep1,
-  RGXStep3WithGreedyConverter,
-  RGXStep4WithoutStep5,
+  RXPStep1,
+  RXPStep3WithGreedyConverter,
+  RXPStep4WithoutStep5,
   IsOptionalOptions,
 } from "./init";
 
@@ -15,27 +15,27 @@ const either = (
   firstOption: NewText,
   secondOption: NewText,
   ...extraOptions: ExtraText
-): RGXStep1 => init(firstOption).or(secondOption, ...extraOptions);
+): RXPStep1 => init(firstOption).or(secondOption, ...extraOptions);
 
 const oneOrMore = (
   text: NewText,
   ...extra: ExtraText
-): RGXStep3WithGreedyConverter => init(text, ...extra).occursOnceOrMore;
+): RXPStep3WithGreedyConverter => init(text, ...extra).occursOnceOrMore;
 
 const zeroOrMore = (
   text: NewText,
   ...extra: ExtraText
-): RGXStep3WithGreedyConverter => init(text, ...extra).occursZeroOrMore;
+): RXPStep3WithGreedyConverter => init(text, ...extra).occursZeroOrMore;
 
 const noOccurenceOf = (
   text: NewText,
   ...extra: ExtraText
-): RGXStep4WithoutStep5 => init(text, ...extra).doesNotOccur;
+): RXPStep4WithoutStep5 => init(text, ...extra).doesNotOccur;
 
 const optional = (text: NewText, ...extra: ExtraText): IsOptionalOptions =>
   init(text, ...extra).isOptional;
 
-const upperOrLowerCase = (letter: string): RGXStep1 => {
+const upperOrLowerCase = (letter: string): RXPStep1 => {
   const confirmValidLetter =
     letter.length === 1 && lettersWithAnyCase.match(letter);
   if (!confirmValidLetter) {
@@ -46,14 +46,14 @@ const upperOrLowerCase = (letter: string): RGXStep1 => {
   return init(upper).or(lower);
 };
 
-// returns a new function that will set up an RGX unit
+// returns a new function that will set up an RXP unit
 // wrapped between other text. For example:
-// const withParentheses = wrapRGX("(", ")")
+// const withParentheses = wrapRXP("(", ")")
 // will allow withParentheses("sample") to return init("(sample)")
-const wrapRGX = (before: NewText, after: NewText) => (
+const wrapRXP = (before: NewText, after: NewText) => (
   wrappedItem: NewText,
   ...extra: ExtraText
-): RGXStep1 => init(before, wrappedItem, ...extra, after);
+): RXPStep1 => init(before, wrappedItem, ...extra, after);
 
 const shorthand = {
   either,
@@ -62,6 +62,6 @@ const shorthand = {
   noOccurenceOf,
   optional,
   upperOrLowerCase,
-  wrapRGX,
+  wrapRXP,
 };
 export default shorthand;
