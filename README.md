@@ -114,7 +114,7 @@ The `init` function can also accept other RGX units. The full constructor object
 
 ```javascript
 const newSample = init("combine with ", escaped);
-newSample.text; // "(?:combine with (?:escape \\. and \\?))"
+newSample.text; // "(?:(?:combine with )(?:escape \\. and \\?))"
 ```
 
 ##### Modify Behavior
