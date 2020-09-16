@@ -1,7 +1,10 @@
 import "mocha";
 import { expect } from "chai";
+import init from "../src/init";
 import formatText, {
+  parseText,
   formatRegex,
+  convertRegexToString,
   convertToGreedySearch,
 } from "../src/formatText";
 const {
@@ -32,6 +35,21 @@ describe("Test user text transformations", () => {
     expect(formatted).to.equal("hello \\^\\|\\*");
     expect(regexTest.test("hello ^|*")).to.equal(true);
   });
+  it("correctly converts regex literal to a string", () => {
+    expect(convertRegexToString(/regex/g)).to.equal("regex");
+    expect(convertRegexToString(/regex \? with escape\//gis)).to.equal(
+      "regex \\? with escape\\/"
+    );
+  });
+  it("correct text parsing between strings, regex literals, and rxp constructors", () => {
+    expect(parseText("sample")).to.equal("(?:sample)");
+    const sampleRXP = init("sampleRXP");
+    expect(parseText(sampleRXP)).to.equal("(?:sampleRXP)");
+    expect(parseText(/regex/g)).to.equal("(?:regex)");
+  });
+  it("correct text parsing applied to arrays", () => {
+    //
+  });
 
   it("render text with optional marker", () => {
     const optionalHello = isOptional("(?:hello)");
@@ -54,7 +72,7 @@ describe("Test user text transformations", () => {
   it("render text with either marker", () => {
     // the first arg will always have textParsing
     // and nonCaptureGrouping already applied from the 'init' function
-    const orOption = or("(?:Hi)", "Bye");
+    const orOption = or("(?:Hi)", /Bye/g);
     expect(orOption).to.equal("(?:(?:Hi)|(?:Bye))");
   });
 
@@ -116,7 +134,7 @@ describe("Define text as surrounded by other specified text", () => {
   });
 
   it("mark text as NOT being followed by specified text", () => {
-    const notFollowedExample = notFollowedBy("(?:hello)", "goodbye");
+    const notFollowedExample = notFollowedBy("(?:hello)", /goodbye/i);
     expect(notFollowedExample).to.equal("(?:(?:hello)(?!(?:goodbye)))");
   });
 
@@ -126,7 +144,7 @@ describe("Define text as surrounded by other specified text", () => {
   });
 
   it("mark text as NOT being preceded by specified text", () => {
-    const notPrecededExample = notPrecededBy("(?:goodbye)", "hello");
+    const notPrecededExample = notPrecededBy("(?:goodbye)", /hello/s);
     expect(notPrecededExample).to.equal("(?:(?<!(?:hello))(?:goodbye))");
   });
 });

@@ -20,7 +20,7 @@ import {
   isVariable,
 } from "./formatText";
 
-// The RXP constructor recieves an unformatted string
+// The RXP constructor recieves an unformatted string, a regex literal,
 // or an already formatted RXP unit and prepares them to be converted
 // to a standard regex pattern i.e. /regex/
 //
@@ -54,12 +54,11 @@ import {
 
 //// Type Settings for RXP constructor ////
 
-// constructor arguments that accept unescaped strings or escaped RXP units
-export type NewText = string | RXPUnit;
-export type ExtraText = (string | RXPUnit)[];
+// constructor arguments that accept unescaped strings, regex literals, or escaped RXP units
+export type NewText = string | RegExp | RXPUnit;
+export type ExtraText = (string | RegExp | RXPUnit)[];
 
 // create the base RXP unit that will form the core of the constructor
-
 export class RXPBaseUnit {
   text: string;
   escaped: boolean;

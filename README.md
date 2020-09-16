@@ -54,6 +54,16 @@ const CreditCardMatch = init(
 ).construct();
 ```
 
+#### Compatible with Regex Literals
+
+- RXP can also accept regex literals (`/regex/g`) and parse these to be used within the constructor, allowing you to easily extend the behavior of regex literals you may already be using:
+
+```javascript
+const myFavoriteRegex = /should this be optional\?/;
+const optionalVersion = init(myFavoriteRegex).isOptional;
+optionalVersion.text; // "(?:(?:should this be optional\\?)?)"
+```
+
 #### Convenient Shorthands and Presets
 
 - frequently used regex behavior, such as marking text optional or providing alternatives, can be quickly defined using shorthand functions that retain RXP functionality
@@ -86,7 +96,7 @@ init("sample").isCaptured.text; // (sample)
 
 ## Quick Guide
 
-The RXP constructor works by accepting a string argument, escaping any special characters, and then modifying the string argument using descriptive object methods to apply wanted behavior. When the prepared regex string is ready, it can be transformed to a regex literal (`/regex/`) with any desired flags applied.
+The RXP constructor works by accepting either a string, escaping any special characters, and then modifying the string argument using descriptive object methods to apply wanted behavior. When the prepared regex string is ready, it can be transformed to a regex literal (`/regex/`) with any desired flags applied.
 
 ```javascript
 const regexSearch = init("text", " with ", "unescaped []")
@@ -110,11 +120,11 @@ const escaped = init("escape ", ". and ?");
 escaped.text; // "(?:escape \\. and \\?)"
 ```
 
-The `init` function can also accept other RXP units. The full constructor object should be provided and not just the `.text` property to avoid escaping special characters a second time:
+The `init` function can also accept regex literals or other RXP units. When providing another RXP unit, the full constructor object should be provided and not just the `.text` property to avoid escaping special characters a second time:
 
 ```javascript
-const newSample = init("combine with ", escaped);
-newSample.text; // "(?:(?:combine with )(?:escape \\. and \\?))"
+const newSample = init("combine with ", /regex literal/, escaped);
+newSample.text; // "(?:(?:combine with )(?:regex literal)(?:escape \\. and \\?))"
 ```
 
 ##### Modify Behavior

@@ -75,6 +75,12 @@ describe("", () => {
       expect(initialUnit.escaped).to.be.true;
       expect(findKeysAndGetters(initialUnit)).to.have.same.members(step1Keys);
     });
+    it("correct formatting of regex literal to string", () => {
+      expect(init(/regex\.\?/g).text).to.equal("(?:regex\\.\\?)");
+      expect(init("hello", /regex\.\?/g).text).to.equal(
+        "(?:(?:hello)(?:regex\\.\\?))"
+      );
+    });
     it("correct composition of RXP units without additional escaping", () => {
       const sampleRXPUnit = new RXPBaseUnit("(?:pre-escaped sample)");
       const initialUnit = init(sampleRXPUnit);
@@ -84,9 +90,13 @@ describe("", () => {
     });
   });
   describe("RXP Step 1 - 'or'", () => {
-    const testOr = init("sample").or("other sample");
+    const testOr = init("sample")
+      .or("other sample")
+      .or(/third\./s);
     it("valid transformation of text", () => {
-      expect(testOr.text).to.equal("(?:(?:sample)|(?:other sample))");
+      expect(testOr.text).to.equal(
+        "(?:(?:(?:sample)|(?:other sample))|(?:third\\.))"
+      );
     });
     it("valid RXP method options after 'or'", () => {
       // step 1 is recursive, allowing for additional 'or' methods
@@ -176,9 +186,9 @@ describe("", () => {
   describe("RXP Step 3 - 'surrounding' grouping", () => {
     const sample = init("sample");
     const testPrecededBy = sample.precededBy("before");
-    const testNotPrecededBy = sample.notPrecededBy("not before");
+    const testNotPrecededBy = sample.notPrecededBy(/not before/s);
     const testFollowedBy = sample.followedBy("after");
-    const testNotFollowedBy = sample.notFollowedBy("not after");
+    const testNotFollowedBy = sample.notFollowedBy(/not after/g);
     it("valid transformation of text", () => {
       expect(testPrecededBy.text).to.equal("(?:(?<=(?:before))(?:sample))");
       expect(testNotPrecededBy.text).to.equal(

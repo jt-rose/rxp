@@ -22,8 +22,8 @@ type CombineText = (
 ) => string;
 type CombineTextWithRXPUnits = (
   text: string,
-  newText: string | RXPUnit,
-  ...extra: (string | RXPUnit)[]
+  newText: string | RegExp | RXPUnit,
+  ...extra: (string | RegExp | RXPUnit)[]
 ) => string;
 type SetFrequency = (text: string, amount: number) => string;
 type SetRange = (text: string, min: number, max: number) => string;
@@ -31,16 +31,31 @@ type SetRange = (text: string, min: number, max: number) => string;
 // wrap regex text in a non-capture grouping
 export const withNonCaptureGrouping = (text: string): string => `(?:${text})`;
 
-// receive string or RXPUnit and format text accordingly
-type ParseText = (text: string | RXPUnit) => string;
-export const parseText: ParseText = (text) =>
-  typeof text === "string"
-    ? withNonCaptureGrouping(formatRegex(text))
-    : text.text;
+// convert a regex literal to a string, removing borders
+export const convertRegexToString = (regex: RegExp): string =>
+  `${regex}`.replace(/^\//, "").replace(/(\/(g|i|m|s|u|y){0,6})$/, "");
 
+// receive string or RXPUnit and format text accordingly
+type ParseText = (text: string | RegExp | RXPUnit) => string;
+export const parseText: ParseText = (text) => {
+  if (typeof text === "string") {
+    return withNonCaptureGrouping(formatRegex(text));
+  } else if (text instanceof RegExp) {
+    return withNonCaptureGrouping(convertRegexToString(text));
+  } else if ("text" && "escaped" && "construct" in text) {
+    return text.text;
+  } else {
+    throw new Error(
+      "The RXP constructor can only accept string, regex, or other RXP constructors"
+    );
+  }
+};
+
+// combine an already parsed initial text with new texts that will need to be parsed
 // wrap args in parseText function to handle different data types
 type TextParsingHOF = (func: CombineText) => CombineTextWithRXPUnits;
 const withTextParsing: TextParsingHOF = (func) => (text, newText, ...extra) => {
+  // the initial text will have already been parsed
   const parsedNewText = parseText(newText);
   const parsedExtra = extra.map(parseText);
   return func(text, parsedNewText, ...parsedExtra);
