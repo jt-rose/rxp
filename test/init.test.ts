@@ -10,7 +10,7 @@ import init, {
 } from "../src/init";
 
 // define expected keys for each individual step of the RXP constructor
-const everyStepKeys = ["text", "escaped", "construct"];
+const everyStepKeys = ["text", "construct"];
 const onlyStep1Keys = ["or"];
 const onlyStep2Keys = [
   "occurs",
@@ -72,7 +72,6 @@ describe("", () => {
     it("correct escaping of submitted text", () => {
       const initialUnit = init("first step");
       expect(initialUnit.text).to.equal("(?:first step)");
-      expect(initialUnit.escaped).to.be.true;
       expect(findKeysAndGetters(initialUnit)).to.have.same.members(step1Keys);
     });
     it("correct formatting of regex literal to string", () => {
@@ -85,7 +84,6 @@ describe("", () => {
       const sampleRXPUnit = new RXPBaseUnit("(?:pre-escaped sample)");
       const initialUnit = init(sampleRXPUnit);
       expect(initialUnit.text).to.equal("(?:pre-escaped sample)");
-      expect(initialUnit.escaped).to.be.true;
       expect(findKeysAndGetters(initialUnit)).to.have.same.members(step1Keys);
     });
   });

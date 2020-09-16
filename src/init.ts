@@ -61,10 +61,8 @@ export type ExtraText = (string | RegExp | RXPUnit)[];
 // create the base RXP unit that will form the core of the constructor
 export class RXPBaseUnit {
   text: string;
-  escaped: boolean;
   constructor(text: string) {
     this.text = text;
-    this.escaped = true;
   }
   construct = (...flags: string[]): RegExp => constructRXP(this.text, flags);
 }
@@ -403,13 +401,11 @@ class Step3OptionsWithoutAtEnd extends Step3OptionsWithoutStep4 {
 
 export class RXPStep1 extends Step3Options {
   text: string;
-  escaped: boolean;
   construct: (...flags: string[]) => RegExp;
   constructor(text: string) {
     super(text);
     const baseUnit = new RXPBaseUnit(text);
     this.text = baseUnit.text;
-    this.escaped = baseUnit.escaped;
     this.construct = baseUnit.construct;
   }
   // step 1 method - or

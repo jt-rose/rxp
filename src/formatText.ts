@@ -42,7 +42,7 @@ export const parseText: ParseText = (text) => {
     return withNonCaptureGrouping(formatRegex(text));
   } else if (text instanceof RegExp) {
     return withNonCaptureGrouping(convertRegexToString(text));
-  } else if ("text" && "escaped" && "construct" in text) {
+  } else if ("text" && "construct" in text) {
     return text.text;
   } else {
     throw new Error(
