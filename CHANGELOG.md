@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - optimized non-capture groupings to avoid redundancies
+- simplified RXPUnit types to reflect a single interface with optional methods/ properties. This was done to simplify the intellisense suggestions to a single RXPUnit. Before, each possible stage of the RXP constructor would show up as a separate type.
+
+### Fixed
+
+- fixed bug that created too many \ escaping characters when generating variables
 
 ### Removed
 

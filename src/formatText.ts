@@ -116,7 +116,7 @@ export const notPrecededBy = withTextParsing(
 export const isCaptured: ModifyText = (text) => `(${text})`;
 export const isVariable: ModifyText = (text) => {
   const uniqueName = uniqid().replace(/[0-9]/g, "");
-  return `(?<${uniqueName}>${text}\\\\k<${uniqueName}>)`;
+  return `(?<${uniqueName}>${text}\\k<${uniqueName}>)`;
 };
 
 export const atStart: ModifyText = (text) => `^${withNonCaptureGrouping(text)}`;

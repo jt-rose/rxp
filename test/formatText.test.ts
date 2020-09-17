@@ -63,9 +63,7 @@ describe("Test user text transformations", () => {
 
   it("render text with variable marker", () => {
     const regexVariable = isVariable("var");
-    const testVariableFormatting = /\(\?<.+?>var\\\\k<.+?>\)/.test(
-      regexVariable
-    );
+    const testVariableFormatting = /\(\?<.+?>var\\k<.+?>\)/.test(regexVariable);
     expect(testVariableFormatting).to.be.true;
   });
 

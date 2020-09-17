@@ -65,6 +65,27 @@ export class RXPBaseUnit {
   }
   construct = (...flags: string[]): RegExp => constructRXP(this.text, flags);
 }
+/*
+interface MinimalRXP extends RXPBaseUnit {
+  and?:;
+  or?: () => RXPStep1;
+  occurs?:() => RXPStep3;
+  doesNotOccur?: RXPStep4WithoutStep5;
+  occursOnceOrMore?: RXPStep3WithGreedyConverter;
+  occursZeroOrMore?: RXPStep3WithGreedyConverter
+  occursAtLeast?: () => RXPStep3;
+  occursBetween?: () => RXPStep3;
+  followedBy?: () => RXPStep3WithoutAtEnd | RXPStep3WithoutStep4;
+  notFollowedBy?: () => RXPStep3WithoutAtEnd | RXPStep3WithoutStep4;
+  precededBy?: () => RXPStep3WithoutAtStart | RXPStep3WithoutStep4;
+  notPrecededBy?: () => RXPStep3WithoutAtStart | RXPStep3WithoutStep4;
+  atStart?: RXPStep5;
+  atEnd?: RXPStep5;
+  isOptional?: IsOptionalOptions | RXPBaseUnit;
+  isCaptured?:
+  isVariable?:
+
+}*/
 
 // all possible RXP units
 export type RXPUnit =
@@ -155,7 +176,7 @@ const constructFlagMarkers = (flags: string[]) =>
 export const getUneditedRegexVariables = (
   RXPString: string
 ): string[] | null => {
-  const foundVariables = RXPString.match(/\(\?<.+?>.+?\\\\k<.+?>\)/g);
+  const foundVariables = RXPString.match(/\(\?<.+?>.+?\\k<.+?>\)/g);
   return foundVariables ? [...new Set(foundVariables)] : null;
 };
 
@@ -169,8 +190,8 @@ export const formatVariableReplacements = (
 ): FormattedRegexVariables[] =>
   variablesFound.map((regexVar) => ({
     original: regexVar,
-    firstUseEdit: regexVar.replace(/\\\\k<.+?>/, ""),
-    followingUseEdit: regexVar.replace(/\?<.+?>.+?(?=\\\\k<.+?>)/, ""),
+    firstUseEdit: regexVar.replace(/\\k<.+?>/, ""),
+    followingUseEdit: regexVar.replace(/\?<.+?>.+?(?=\\k<.+?>)/, ""),
   }));
 
 export const updateFirstVariableUsage = (
@@ -250,6 +271,25 @@ export class IsOptionalOptions extends RXPBaseUnit {
     };
   }
 }
+
+class IsCapturedOptions extends RXPBaseUnit {
+  and: {
+    isOptional: RXPBaseUnit;
+    isVariable: RXPBaseUnit;
+  };
+  constructor(text: string) {
+    super(text);
+    this.and = {
+      get isOptional() {
+        return new RXPBaseUnit(isOptional(text));
+      },
+      get isVariable() {
+        return new RXPBaseUnit(isVariable(text));
+      },
+    };
+  }
+}
+
 class Step5Options {
   protected _text: string;
 
@@ -260,13 +300,7 @@ class Step5Options {
     return new IsOptionalOptions(isOptional(this._text));
   }
   get isCaptured() {
-    return {
-      ...new RXPBaseUnit(isCaptured(this._text)),
-      and: {
-        isOptional: new RXPBaseUnit(isOptional(isCaptured(this._text))),
-        isVariable: new RXPBaseUnit(isVariable(isCaptured(this._text))),
-      },
-    };
+    return new IsCapturedOptions(isCaptured(this._text));
   }
   get isVariable() {
     return {

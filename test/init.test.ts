@@ -8,6 +8,7 @@ import init, {
   formatVariableReplacements,
   formatRXPVariables,
 } from "../src/init";
+import presets from "../src/presets";
 
 // define expected keys for each individual step of the RXP constructor
 const everyStepKeys = ["text", "construct"];
@@ -274,12 +275,12 @@ describe("", () => {
 
       expect(testIsCaptured.text).to.equal("(sample)");
       expect(testIsCapturedAndOptional.text).to.equal("(?:(sample))?");
-      const correctCaptureAndVariable = /\(\?<.+>\(sample\)\\\\k<.+?>\)/.test(
+      const correctCaptureAndVariable = /\(\?<.+>\(sample\)\\k<.+?>\)/.test(
         testIsCapturedAndVariable.text
       );
       expect(correctCaptureAndVariable).to.be.true;
 
-      const correctVariableTransformation = /\(\?<.+>sample\\\\k<.+?>\)/.test(
+      const correctVariableTransformation = /\(\?<.+>sample\\k<.+?>\)/.test(
         testIsVariable.text
       );
       expect(correctVariableTransformation).to.be.true;
@@ -328,18 +329,17 @@ describe("", () => {
     ).construct();
 
     // RXP-style variables
-    const RXPVar1 = "(?<varName>stuff\\\\k<varName>)";
-    const RXPVar2 = "(?<secondVar>text\\\\k<secondVar>)";
-    const RXPVar3 = "(?<thirdVar>last one\\\\k<thirdVar>)";
+    const RXPVar1 = "(?<varName>stuff\\k<varName>)";
+    const RXPVar2 = "(?<secondVar>text\\k<secondVar>)";
+    const RXPVar3 = "(?<thirdVar>last one\\k<thirdVar>)";
 
     //RXP-style variables nested in larger regex string
     const singleRXPVariable = RXPVar1 + " and more " + RXPVar1;
-    const formattedSingleVariable =
-      "(?<varName>stuff) and more (\\\\k<varName>)";
+    const formattedSingleVariable = "(?<varName>stuff) and more (\\k<varName>)";
     const formattedDoubleVariable =
-      "(?<varName>stuff) and (?<secondVar>text) with another (\\\\k<varName>)";
+      "(?<varName>stuff) and (?<secondVar>text) with another (\\k<varName>)";
     const formattedTripleVariable =
-      "(?<varName>stuff) and (?<secondVar>text) with another (\\\\k<varName>) and yet another (?<thirdVar>last one) with (\\\\k<thirdVar>)";
+      "(?<varName>stuff) and (?<secondVar>text) with another (\\k<varName>) and yet another (?<thirdVar>last one) with (\\k<thirdVar>)";
     const doubleRXPVariable =
       RXPVar1 + " and " + RXPVar2 + " with another " + RXPVar1;
     const tripleRXPVariable =
@@ -383,7 +383,7 @@ describe("", () => {
         "(?<varName>stuff)"
       );
       expect(matchSingleReplacements[0].followingUseEdit).to.equal(
-        "(\\\\k<varName>)"
+        "(\\k<varName>)"
       );
 
       expect(matchDoubleReplacements[1].original).to.equal(RXPVar2);
@@ -391,7 +391,7 @@ describe("", () => {
         "(?<secondVar>text)"
       );
       expect(matchDoubleReplacements[1].followingUseEdit).to.equal(
-        "(\\\\k<secondVar>)"
+        "(\\k<secondVar>)"
       );
 
       expect(matchTripleReplacements[2].original).to.equal(RXPVar3);
@@ -399,7 +399,7 @@ describe("", () => {
         "(?<thirdVar>last one)"
       );
       expect(matchTripleReplacements[2].followingUseEdit).to.equal(
-        "(\\\\k<thirdVar>)"
+        "(\\k<thirdVar>)"
       );
     });
     it("valid updates of variables in regex string", () => {
@@ -423,7 +423,7 @@ describe("", () => {
     });
     it("valid conversion of RegExp variable references", () => {
       const stringRegexSample = `${sampleWithVariables}`;
-      const expectedVariableConstruct = /\/\(\?<.+?>var\)some text\(\\\\k<.+?>\)\//.test(
+      const expectedVariableConstruct = /\/\(\?<.+?>var\)some text\(\\k<.+?>\)\//.test(
         stringRegexSample
       );
       const withoutVariableNames = stringRegexSample.replace(
@@ -431,7 +431,22 @@ describe("", () => {
         ""
       );
       expect(expectedVariableConstruct).to.be.true;
-      expect(withoutVariableNames).to.equal("/(?<>var)some text(\\\\k<>)/");
+      expect(withoutVariableNames).to.equal("/(?<>var)some text(\\k<>)/");
+      it("correct matching for variables", () => {
+        const varSample = init("a").or("b").isVariable;
+        const testVars = init(varSample, " and ", varSample).construct();
+        expect(testVars.test("a and a")).to.be.true;
+        expect(testVars.test("b and b")).to.be.true;
+        expect(testVars.test("a and b")).to.be.false;
+
+        const varSample2 = presets.anyDigit.occurs(3).and.isVariable;
+        const testVars2 = init(varSample2, " and ", varSample2).construct();
+        expect(testVars2.test("333 and 333")).to.be.true;
+        expect(testVars2.test("789 and 789")).to.be.true;
+        expect(testVars2.test("a and b")).to.be.false;
+        expect(testVars2.test("111 and 333")).to.be.false;
+        expect(testVars2.test("123 and 456")).to.be.false;
+      });
     });
     it("valid construction of regex flags", () => {
       // test single flag constructors
