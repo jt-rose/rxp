@@ -61,7 +61,7 @@ const CreditCardMatch = init(
 ```javascript
 const myFavoriteRegex = /should this be optional\?/;
 const optionalVersion = init(myFavoriteRegex).isOptional;
-optionalVersion.text; // "(?:(?:should this be optional\\?)?)"
+optionalVersion.text; // "(?:should this be optional\\?)?"
 ```
 
 #### Convenient Shorthands and Presets
@@ -90,8 +90,8 @@ oneOrMore("sample").text; // (?:sample)+?
 oneOrMore("sample").and.isGreedy.text; // (?:sample)+
 
 // convert to captured groupings
-init("sample").text; // (?:sample)
-init("sample").isCaptured.text; // (sample)
+init("sample")isOptional.text; // (?:sample)?
+init("sample").isOptional.and.isCaptured.text; // ((?:sample)?)
 ```
 
 ## Quick Guide
@@ -101,7 +101,7 @@ The RXP constructor works by accepting either a string, escaping any special cha
 ```javascript
 const regexSearch = init("text", " with ", "unescaped []")
   .occursOnceOrMore.and.precededBy("intro: ")
-  .construct("g"); // => /(?:(?<=intro: )(?:(?:text with unescaped \[\])+?))/g
+  .construct("g"); // => /(?<=intro: )(?:text with unescaped \[\])+?/g
 
 regexSearch.test("intro: text with unescaped []"); // true
 regexSearch.test("!Wrong!: text with unescaped []"); // false
@@ -114,17 +114,17 @@ The main `init` function is used to generate the RXP constructor. `init` accepts
 
 ```javascript
 const sample = init("sample");
-sample.text; // "(?:sample)"
+sample.text; // "sample"
 
 const escaped = init("escape ", ". and ?");
-escaped.text; // "(?:escape \\. and \\?)"
+escaped.text; // "escape \\. and \\?"
 ```
 
 The `init` function can also accept regex literals or other RXP units. When providing another RXP unit, the full constructor object should be provided and not just the `.text` property to avoid escaping special characters a second time:
 
 ```javascript
 const newSample = init("combine with ", /regex literal/, escaped);
-newSample.text; // "(?:(?:combine with )(?:regex literal)(?:escape \\. and \\?))"
+newSample.text; // "combine with regex literalescape \\. and \\?"
 ```
 
 ##### Modify Behavior
@@ -133,8 +133,8 @@ After initializing the constructor, a variety of properties/ methods are availab
 
 ```javascript
 init("this").or("that").text; // "(?:(?:this)|(?:that))"
-sample.occursBetween(3, 5).text; // "(?:(?:sample){3,5})"
-sample.occurs(2).and.atEnd.text; // "(?:(?:(?:sample){2})$)"
+sample.occursBetween(3, 5).text; // "(?:sample){3,5}"
+sample.occurs(2).and.atEnd.text; // "(?:(?:sample){2})$"
 ```
 
 ##### Convert to Regex Literal
@@ -142,9 +142,9 @@ sample.occurs(2).and.atEnd.text; // "(?:(?:(?:sample){2})$)"
 When the regex is ready to be finalized, the `construct` method can be used to convert the text string to a regex literal (`/regex/`). A flag can be passed to `construct` to apply matching behavior:
 
 ```javascript
-sample.construct(); // => /(?:sample)/
-sample.construct("g"); // => /(?:sample)/g
-sample.construct("global", "sticky", "i"); // => /(?:sample)/gsi
+sample.construct(); // => /sample/
+sample.construct("g"); // => /sample/g
+sample.construct("global", "sticky", "i"); // => /sample/gsi
 ```
 
 ##### Presets
@@ -181,7 +181,7 @@ const regexSearch = init(
 | method           | example                                   | equivalent                               |
 | ---------------- | ----------------------------------------- | ---------------------------------------- |
 | init             | `const RXPSample = init("sample")`        | escapes text and initializes constructor |
-| or               | `RXPSample.or("other sample")`            | `sample\|other sample`                   |
+| or               | `RXPSample.or("other sample")`            | `(?:(?:sample)\|(?:other sample))`       |
 | occurs           | `RXPSample.occurs(4)`                     | `(?:sample){4}`                          |
 | doesNotOccur     | `RXPSample.doesNotOccur`                  | `[^(?:sample)]`                          |
 | occursOnceOrMore | `RXPSample.occursOnceOrMore`              | `(?:sample)+?`                           |
@@ -189,15 +189,15 @@ const regexSearch = init(
 | occursAtLeast    | `RXPSample.occursAtLeast(3)`              | `(?:sample){3,}`                         |
 | occursBetween    | `RXPSample.occursBetween(2,4)`            | `(?:sample){2,4}`                        |
 | isGreedy         | `RXPSample.occursOnceOrMore.and.isGreedy` | `(?:sample)+`                            |
-| followedBy       | `RXPSample.followedBy("text")`            | `(?:sample)(?=text)`                     |
-| notFollowedBy    | `RXPSample.notFollowedBy("text")`         | `(?:sample)(?!text)`                     |
-| precededBy       | `RXPSample.precededBy("text")`            | `(?<=text)(?:sample)`                    |
-| notPrecededBy    | `RXPSample.notPrecededBy("text")`         | `(?<!text)(?:sample)`                    |
+| followedBy       | `RXPSample.followedBy("text")`            | `sample(?=text)`                         |
+| notFollowedBy    | `RXPSample.notFollowedBy("text")`         | `sample(?!text)`                         |
+| precededBy       | `RXPSample.precededBy("text")`            | `(?<=text)sample`                        |
+| notPrecededBy    | `RXPSample.notPrecededBy("text")`         | `(?<!text)sample`                        |
 | atStart          | `RXPSample.atStart`                       | `^(?:sample)`                            |
 | atEnd            | `RXPSample.atEnd`                         | `(?:sample)\$`                           |
 | isOptional       | `RXPSample.isOptional`                    | `(?:sample)?`                            |
 | isCaptured       | `RXPSample.isCaptured`                    | `(sample)`                               |
-| isVariable       | `RXPSample.isVariable`                    | `(?\<var>(?:sample))` -or- `//k<var>`    |
+| isVariable       | `RXPSample.isVariable`                    | `(?\<var>sample)` -or- `//k<var>`        |
 | and              | `RXPSample.occurs(4).and.atEnd`           | `(?:(?:sample){4})$`                     |
 | construct        | `RXPSample.construct("g")`                | `/sample/g`                              |
 

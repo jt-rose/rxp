@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- optimized non-capture groupings to avoid redundancies
+
 ### Removed
 
 - removed unnecessary `escaped` property from constructor units

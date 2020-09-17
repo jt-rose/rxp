@@ -1,5 +1,4 @@
 import {
-  withNonCaptureGrouping,
   parseText,
   or,
   occurs,
@@ -495,10 +494,7 @@ class RXPStep5 extends RXPBaseUnit {
 // and formatting them before returning step 1 of the constructor
 const init = (text: NewText, ...extra: ExtraText): RXPStep1 => {
   const formattedText = [text, ...extra].map((x) => parseText(x)).join("");
-  // apply nonCaptureGrouping if more than one arg given
-  const textWithGrouping =
-    extra.length > 0 ? withNonCaptureGrouping(formattedText) : formattedText;
-  return new RXPStep1(textWithGrouping);
+  return new RXPStep1(formattedText);
 };
 
 export default init;

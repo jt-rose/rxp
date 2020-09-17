@@ -39,9 +39,9 @@ export const convertRegexToString = (regex: RegExp): string =>
 type ParseText = (text: string | RegExp | RXPUnit) => string;
 export const parseText: ParseText = (text) => {
   if (typeof text === "string") {
-    return withNonCaptureGrouping(formatRegex(text));
+    return formatRegex(text);
   } else if (text instanceof RegExp) {
-    return withNonCaptureGrouping(convertRegexToString(text));
+    return convertRegexToString(text);
   } else if ("text" && "construct" in text) {
     return text.text;
   } else {
@@ -61,54 +61,56 @@ const withTextParsing: TextParsingHOF = (func) => (text, newText, ...extra) => {
   return func(text, parsedNewText, ...parsedExtra);
 };
 
+// combining 'or' text such as (cat)|(dog) with other text can cause problems by modifying cat or dog,
+// to avoid this an additional nonCaptureGrouping is applied to the 'or' settings
+// Ex: init("hello ", /(cat)|(dog)/) would result in matching either "hello cat" or "dog", but not "hello dog"
+// init("hello ", /((cat)|(dog))/) will match "hello cat" or "hello dog" as expected
 export const or = withTextParsing((text, newText, ...extra) =>
-  withNonCaptureGrouping([text, newText, ...extra].join("|"))
-); // the initial text will already be parsed by the 'init' function
+  withNonCaptureGrouping(
+    [text, newText, ...extra].map((x) => withNonCaptureGrouping(x)).join("|")
+  )
+);
 
 export const isOptional: ModifyText = (text) =>
-  withNonCaptureGrouping(`${text}?`);
+  `${withNonCaptureGrouping(text)}?`;
 
 export const occurs: SetFrequency = (text, amount) =>
-  withNonCaptureGrouping(`${text}{${amount}}`);
+  `${withNonCaptureGrouping(text)}{${amount}}`;
 export const doesNotOccur: ModifyText = (text) =>
-  withNonCaptureGrouping(`[^${text}]`);
+  `[^${withNonCaptureGrouping(text)}]`;
 export const occursAtLeast: SetFrequency = (text, min) =>
-  withNonCaptureGrouping(`${text}{${min},}`);
+  `${withNonCaptureGrouping(text)}{${min},}`;
 export const occursOnceOrMore: ModifyText = (text) =>
-  withNonCaptureGrouping(`${text}+?`);
+  `${withNonCaptureGrouping(text)}+?`;
 export const occursZeroOrMore: ModifyText = (text) =>
-  withNonCaptureGrouping(`${text}*?`);
+  `${withNonCaptureGrouping(text)}*?`;
 export const occursBetween: SetRange = (text, min, max) =>
-  withNonCaptureGrouping(`${text}{${min},${max}}`);
+  `${withNonCaptureGrouping(text)}{${min},${max}}`;
 
 // converts lazy searches (+? or *?) to greedy searches (+ or *)
 // must be invoked immediately after declaring the
 // oneOrMore/ zeroOrMore transformations
 export const convertToGreedySearch: ModifyText = (text) =>
-  text.replace(/\?\)$/, ")");
+  text.replace(/\?$/, "");
 
-export const followedBy = withTextParsing((text, following, ...extra) =>
-  withNonCaptureGrouping(
+export const followedBy = withTextParsing(
+  (text, following, ...extra) =>
     `${text}${[following, ...extra].map((x) => `(?=${x})`).join("")}`
-  )
 );
 
-export const notFollowedBy = withTextParsing((text, notFollowing, ...extra) =>
-  withNonCaptureGrouping(
+export const notFollowedBy = withTextParsing(
+  (text, notFollowing, ...extra) =>
     `${text}${[notFollowing, ...extra].map((x) => `(?!${x})`).join("")}`
-  )
 );
 
-export const precededBy = withTextParsing((text, preceding, ...extra) =>
-  withNonCaptureGrouping(
+export const precededBy = withTextParsing(
+  (text, preceding, ...extra) =>
     `${[preceding, ...extra].map((x) => `(?<=${x})`).join("")}${text}`
-  )
 );
 
-export const notPrecededBy = withTextParsing((text, notPreceding, ...extra) =>
-  withNonCaptureGrouping(
+export const notPrecededBy = withTextParsing(
+  (text, notPreceding, ...extra) =>
     `${[notPreceding, ...extra].map((x) => `(?<!${x})`).join("")}${text}`
-  )
 );
 
 export const isCaptured: ModifyText = (text) => `(${text})`;
@@ -117,8 +119,8 @@ export const isVariable: ModifyText = (text) => {
   return `(?<${uniqueName}>${text}\\\\k<${uniqueName}>)`;
 };
 
-export const atStart: ModifyText = (text) => withNonCaptureGrouping(`^${text}`);
-export const atEnd: ModifyText = (text) => withNonCaptureGrouping(`${text}$`);
+export const atStart: ModifyText = (text) => `^${withNonCaptureGrouping(text)}`;
+export const atEnd: ModifyText = (text) => `${withNonCaptureGrouping(text)}$`;
 
 const formatText = {
   or,

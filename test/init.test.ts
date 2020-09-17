@@ -71,14 +71,12 @@ describe("", () => {
   describe("Initialize RXP unit", () => {
     it("correct escaping of submitted text", () => {
       const initialUnit = init("first step");
-      expect(initialUnit.text).to.equal("(?:first step)");
+      expect(initialUnit.text).to.equal("first step");
       expect(findKeysAndGetters(initialUnit)).to.have.same.members(step1Keys);
     });
     it("correct formatting of regex literal to string", () => {
-      expect(init(/regex\.\?/g).text).to.equal("(?:regex\\.\\?)");
-      expect(init("hello", /regex\.\?/g).text).to.equal(
-        "(?:(?:hello)(?:regex\\.\\?))"
-      );
+      expect(init(/regex\.\?/g).text).to.equal("regex\\.\\?");
+      expect(init("hello", /regex\.\?/g).text).to.equal("helloregex\\.\\?");
     });
     it("correct composition of RXP units without additional escaping", () => {
       const sampleRXPUnit = new RXPBaseUnit("(?:pre-escaped sample)");
@@ -93,7 +91,7 @@ describe("", () => {
       .or(/third\./s);
     it("valid transformation of text", () => {
       expect(testOr.text).to.equal(
-        "(?:(?:(?:sample)|(?:other sample))|(?:third\\.))"
+        "(?:(?:(?:(?:sample)|(?:other sample)))|(?:third\\.))"
       );
     });
     it("valid RXP method options after 'or'", () => {
@@ -112,17 +110,17 @@ describe("", () => {
     const testGreedyZeroOrMore = testOccursZeroOrMore.and.isGreedy;
     const testOccursBetween = sample.occursBetween(2, 4);
     it("valid transformation of text", () => {
-      expect(testOccurs.text).to.equal("(?:(?:sample){5})");
-      expect(testDoesNotOccur.text).to.equal("(?:[^(?:sample)])");
-      expect(testOccursAtLeast.text).to.equal("(?:(?:sample){3,})");
+      expect(testOccurs.text).to.equal("(?:sample){5}");
+      expect(testDoesNotOccur.text).to.equal("[^(?:sample)]");
+      expect(testOccursAtLeast.text).to.equal("(?:sample){3,}");
 
-      expect(testOccursOnceOrMore.text).to.equal("(?:(?:sample)+?)");
-      expect(testGreedyOnceOrMore.text).to.equal("(?:(?:sample)+)");
+      expect(testOccursOnceOrMore.text).to.equal("(?:sample)+?");
+      expect(testGreedyOnceOrMore.text).to.equal("(?:sample)+");
 
-      expect(testOccursZeroOrMore.text).to.equal("(?:(?:sample)*?)");
-      expect(testGreedyZeroOrMore.text).to.equal("(?:(?:sample)*)");
+      expect(testOccursZeroOrMore.text).to.equal("(?:sample)*?");
+      expect(testGreedyZeroOrMore.text).to.equal("(?:sample)*");
 
-      expect(testOccursBetween.text).to.equal("(?:(?:sample){2,4})");
+      expect(testOccursBetween.text).to.equal("(?:sample){2,4}");
     });
     it("valid RXP method options after 'occurs' options", () => {
       expect(findKeysAndGetters(testOccurs)).to.have.same.members(step3Keys);
@@ -188,14 +186,10 @@ describe("", () => {
     const testFollowedBy = sample.followedBy("after");
     const testNotFollowedBy = sample.notFollowedBy(/not after/g);
     it("valid transformation of text", () => {
-      expect(testPrecededBy.text).to.equal("(?:(?<=(?:before))(?:sample))");
-      expect(testNotPrecededBy.text).to.equal(
-        "(?:(?<!(?:not before))(?:sample))"
-      );
-      expect(testFollowedBy.text).to.equal("(?:(?:sample)(?=(?:after)))");
-      expect(testNotFollowedBy.text).to.equal(
-        "(?:(?:sample)(?!(?:not after)))"
-      );
+      expect(testPrecededBy.text).to.equal("(?<=before)sample");
+      expect(testNotPrecededBy.text).to.equal("(?<!not before)sample");
+      expect(testFollowedBy.text).to.equal("sample(?=after)");
+      expect(testNotFollowedBy.text).to.equal("sample(?!not after)");
     });
     it("valid RXP method options after 'surrounding' options", () => {
       expect(findKeysAndGetters(testPrecededBy)).to.have.same.members(
@@ -252,8 +246,8 @@ describe("", () => {
     const testAtStart = sample.atStart;
     const testAtEnd = sample.atEnd;
     it("valid transformation of text", () => {
-      expect(testAtStart.text).to.equal("(?:^(?:sample))");
-      expect(testAtEnd.text).to.equal("(?:(?:sample)$)");
+      expect(testAtStart.text).to.equal("^(?:sample)");
+      expect(testAtEnd.text).to.equal("(?:sample)$");
     });
     it("valid RXP method options after step 4 options", () => {
       expect(findKeysAndGetters(testAtStart)).to.have.same.members(step4Keys);
@@ -275,17 +269,17 @@ describe("", () => {
     const testIsCapturedAndVariable = testIsCaptured.and.isVariable;
     const testIsVariable = sample.isVariable;
     it("valid transformation of text", () => {
-      expect(testIsOptional.text).to.equal("(?:(?:sample)?)");
-      expect(testIsOptionalAndCaptured.text).to.equal("((?:(?:sample)?))");
+      expect(testIsOptional.text).to.equal("(?:sample)?");
+      expect(testIsOptionalAndCaptured.text).to.equal("((?:sample)?)");
 
-      expect(testIsCaptured.text).to.equal("((?:sample))");
-      expect(testIsCapturedAndOptional.text).to.equal("(?:((?:sample))?)");
-      const correctCaptureAndVariable = /\(\?<.+>\(\(\?:sample\)\)\\\\k<.+?>\)/.test(
+      expect(testIsCaptured.text).to.equal("(sample)");
+      expect(testIsCapturedAndOptional.text).to.equal("(?:(sample))?");
+      const correctCaptureAndVariable = /\(\?<.+>\(sample\)\\\\k<.+?>\)/.test(
         testIsCapturedAndVariable.text
       );
       expect(correctCaptureAndVariable).to.be.true;
 
-      const correctVariableTransformation = /\(\?<.+>\(\?:sample\)\\\\k<.+?>\)/.test(
+      const correctVariableTransformation = /\(\?<.+>sample\\\\k<.+?>\)/.test(
         testIsVariable.text
       );
       expect(correctVariableTransformation).to.be.true;
@@ -334,18 +328,18 @@ describe("", () => {
     ).construct();
 
     // RXP-style variables
-    const RXPVar1 = "(?<varName>(?:stuff)\\\\k<varName>)";
-    const RXPVar2 = "(?<secondVar>(?:text)\\\\k<secondVar>)";
-    const RXPVar3 = "(?<thirdVar>(?:(?:last )(?:one))\\\\k<thirdVar>)";
+    const RXPVar1 = "(?<varName>stuff\\\\k<varName>)";
+    const RXPVar2 = "(?<secondVar>text\\\\k<secondVar>)";
+    const RXPVar3 = "(?<thirdVar>last one\\\\k<thirdVar>)";
 
     //RXP-style variables nested in larger regex string
     const singleRXPVariable = RXPVar1 + " and more " + RXPVar1;
     const formattedSingleVariable =
-      "(?<varName>(?:stuff)) and more (\\\\k<varName>)";
+      "(?<varName>stuff) and more (\\\\k<varName>)";
     const formattedDoubleVariable =
-      "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>)";
+      "(?<varName>stuff) and (?<secondVar>text) with another (\\\\k<varName>)";
     const formattedTripleVariable =
-      "(?<varName>(?:stuff)) and (?<secondVar>(?:text)) with another (\\\\k<varName>) and yet another (?<thirdVar>(?:(?:last )(?:one))) with (\\\\k<thirdVar>)";
+      "(?<varName>stuff) and (?<secondVar>text) with another (\\\\k<varName>) and yet another (?<thirdVar>last one) with (\\\\k<thirdVar>)";
     const doubleRXPVariable =
       RXPVar1 + " and " + RXPVar2 + " with another " + RXPVar1;
     const tripleRXPVariable =
@@ -386,7 +380,7 @@ describe("", () => {
 
       expect(matchSingleReplacements[0].original).to.equal(RXPVar1);
       expect(matchSingleReplacements[0].firstUseEdit).to.equal(
-        "(?<varName>(?:stuff))"
+        "(?<varName>stuff)"
       );
       expect(matchSingleReplacements[0].followingUseEdit).to.equal(
         "(\\\\k<varName>)"
@@ -394,7 +388,7 @@ describe("", () => {
 
       expect(matchDoubleReplacements[1].original).to.equal(RXPVar2);
       expect(matchDoubleReplacements[1].firstUseEdit).to.equal(
-        "(?<secondVar>(?:text))"
+        "(?<secondVar>text)"
       );
       expect(matchDoubleReplacements[1].followingUseEdit).to.equal(
         "(\\\\k<secondVar>)"
@@ -402,7 +396,7 @@ describe("", () => {
 
       expect(matchTripleReplacements[2].original).to.equal(RXPVar3);
       expect(matchTripleReplacements[2].firstUseEdit).to.equal(
-        "(?<thirdVar>(?:(?:last )(?:one)))"
+        "(?<thirdVar>last one)"
       );
       expect(matchTripleReplacements[2].followingUseEdit).to.equal(
         "(\\\\k<thirdVar>)"
@@ -421,15 +415,15 @@ describe("", () => {
       expect(formatNoChanges).to.equal(noVariable);
     });
     it("valid RegExp formatting", () => {
-      expect(`${sampleConstruct}`).to.equal("/(?:sample)/");
+      expect(`${sampleConstruct}`).to.equal("/sample/");
       const expectedComplexConstructString =
-        "/(?:((?:(?:(?<=(?:before))(?:(?:(?:(?:sample)(?:2nd sample))|(?:other option)){5}))$))?)/";
+        "/(?:((?:(?<=before)(?:(?:(?:sample2nd sample)|(?:other option))){5})$))?/";
 
       expect(`${complexConstruct}`).to.equal(expectedComplexConstructString);
     });
     it("valid conversion of RegExp variable references", () => {
       const stringRegexSample = `${sampleWithVariables}`;
-      const expectedVariableConstruct = /\/\(\?:\(\?<.+?>\(\?:var\)\)\(\?:some text\)\(\\\\k<.+?>\)\)\//.test(
+      const expectedVariableConstruct = /\/\(\?<.+?>var\)some text\(\\\\k<.+?>\)\//.test(
         stringRegexSample
       );
       const withoutVariableNames = stringRegexSample.replace(
@@ -437,9 +431,7 @@ describe("", () => {
         ""
       );
       expect(expectedVariableConstruct).to.be.true;
-      expect(withoutVariableNames).to.equal(
-        "/(?:(?<>(?:var))(?:some text)(\\\\k<>))/"
-      );
+      expect(withoutVariableNames).to.equal("/(?<>var)some text(\\\\k<>)/");
     });
     it("valid construction of regex flags", () => {
       // test single flag constructors
@@ -451,7 +443,7 @@ describe("", () => {
       const testUnicode = init("sample").construct("u");
       const testSticky = init("sample").construct("y");
 
-      expect(`${testDefault}`).to.equal("/(?:sample)/");
+      expect(`${testDefault}`).to.equal("/sample/");
       expect(testGlobal.global).to.be.true;
       expect(testIgnoreCase.ignoreCase).to.be.true;
       expect(testMultiline.multiline).to.be.true;
@@ -468,7 +460,7 @@ describe("", () => {
       const testUnicodeKeyWord = init("sample").construct("unicode");
       const testStickyKeyWord = init("sample").construct("sticky");
 
-      expect(`${testDefaultKeyWord}`).to.equal("/(?:sample)/");
+      expect(`${testDefaultKeyWord}`).to.equal("/sample/");
       expect(testGlobalKeyWord.global).to.be.true;
       expect(testIgnoreCaseKeyWord.ignoreCase).to.be.true;
       expect(testMultilineKeyWord.multiline).to.be.true;
