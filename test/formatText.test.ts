@@ -23,7 +23,6 @@ const {
   atEnd,
   isOptional,
   isCaptured,
-  isVariable,
 } = formatText;
 
 const initRegex = (regex: string | RegExp) => new RegExp(regex);
@@ -59,12 +58,6 @@ describe("Test user text transformations", () => {
   it("render text with capture marker", () => {
     const capturedWord = isCaptured("capture");
     expect(capturedWord).to.equal("(capture)");
-  });
-
-  it("render text with variable marker", () => {
-    const regexVariable = isVariable("var");
-    const testVariableFormatting = /\(\?<.+?>var\\k<.+?>\)/.test(regexVariable);
-    expect(testVariableFormatting).to.be.true;
   });
 
   it("render text with either marker", () => {

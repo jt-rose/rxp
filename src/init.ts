@@ -8,29 +8,35 @@ import {
   occursAtLeast,
   occursBetween,
   convertToGreedySearch,
-  isOptional,
-  isCaptured,
-  atStart,
-  atEnd,
   followedBy,
   notFollowedBy,
   precededBy,
   notPrecededBy,
-  isVariable,
+  atStart,
+  atEnd,
+  isOptional,
+  isCaptured,
 } from "./formatText";
+import { isVariable } from "./formatVariables";
+import constructRXP from "./constructRXP";
 
-// The RXP constructor recieves an unformatted string, a regex literal,
+// The RXP constructor receives an unformatted string, a regex literal,
 // or an already formatted RXP unit and prepares them to be converted
 // to a standard regex pattern i.e. /regex/
 //
 // user submitted strings should be written literally
 // and will be escaped by the constructor
 //
-// The constructor contains the base RXP unit
+// The constructor creates an object that contains the base RXP unit
 // which stores the modifiable text as a string
 // along with a regex 'construct' method
-// which are always available and can be passed into other
-// RXP units in a composable manner
+// and appropriate method calls to further modify the text
+//
+// as the regex string is modified through the object methods
+// nested calls to new objects are used to define
+// what further options should be available at this point
+// this enforces a logical, clear flow to how text is modified
+// and avoids some potential errors (mentioned further below)
 
 // By default, RXP uses lazy searches and non-capturing groupings
 // but this behavior can be overwritten
@@ -122,167 +128,6 @@ export interface RXPUnit extends RXPBaseUnit {
   isCaptured?: IsCapturedOptions | RXPBaseUnit;
   isVariable?: IsVariableOptions | RXPBaseUnit;
 }
-/*
-// all possible RXP units
-export type RXPUnit =
-  | RXPBaseUnit
-  | RXPStep1
-  | RXPStep3
-  | RXPStep3WithGreedyConverter
-  | RXPStep3WithoutAtStart
-  | RXPStep3WithoutAtEnd
-  | RXPStep3WithoutStep4
-  | RXPStep4WithoutStep5
-  | RXPStep5;
-*/
-// define acceptable flag names for RegExp constructor
-const defaultFlag = "";
-const defaultFlagKeyWord = "default";
-const globalFlag = "g";
-const globalFlagKeyWord = "global";
-const ignoreCaseFlag = "i";
-const ignoreCaseFlagKeyWord = "ignoreCase";
-const multilineFlag = "m";
-const multilineFlagKeyWord = "multiline";
-const dotAllFlag = "s";
-const dotAllFlagKeyWord = "dotAll";
-const unicodeFlag = "u";
-const unicodeFlagKeyWord = "unicode";
-const stickyFlag = "y";
-const stickyFlagKeyWord = "sticky";
-
-const validFlags = [
-  defaultFlag,
-  defaultFlagKeyWord,
-  globalFlag,
-  globalFlagKeyWord,
-  ignoreCaseFlag,
-  ignoreCaseFlagKeyWord,
-  multilineFlag,
-  multilineFlagKeyWord,
-  dotAllFlag,
-  dotAllFlagKeyWord,
-  unicodeFlag,
-  unicodeFlagKeyWord,
-  stickyFlag,
-  stickyFlagKeyWord,
-];
-
-// confirm requested flag is valid
-const validateFlag = (flag: string) => validFlags.includes(flag);
-const validateFlags = (flags: string[]) => flags.every(validateFlag);
-
-// convert flag keynames such as 'global' to correct flag "g"
-const convertFlagName = (flag: string) => {
-  switch (flag) {
-    case defaultFlagKeyWord:
-      return defaultFlag;
-    case globalFlagKeyWord:
-      return globalFlag;
-    case ignoreCaseFlagKeyWord:
-      return ignoreCaseFlag;
-    case multilineFlagKeyWord:
-      return multilineFlag;
-    case dotAllFlagKeyWord:
-      return dotAllFlag;
-    case unicodeFlagKeyWord:
-      return unicodeFlag;
-    case stickyFlagKeyWord:
-      return stickyFlag;
-    default:
-      return flag;
-  }
-};
-
-// apply flag conversion to multiple submitted flags
-const constructFlagMarkers = (flags: string[]) =>
-  [...new Set(flags.map(convertFlagName))].join("");
-
-// check RXP text for variables and format them correctly
-//
-// to account for the composable and modular nature of RXP
-// regex variables are submitted with both the initial
-// and subsequent variable expressions included
-// and are formatted once the text is ready to be constructed
-// for example, a variable will be structured as "(?<var>sample\\\\k<var>)"
-// and added to a text however many times are needed
-// it will later be transformed to "(?<var>sample)"
-// for the initial variable declaration
-// and "(\\\\k<var>)" for subsequent uses
-export const getUneditedRegexVariables = (
-  RXPString: string
-): string[] | null => {
-  const foundVariables = RXPString.match(/\(\?<.+?>.+?\\k<.+?>\)/g);
-  return foundVariables ? [...new Set(foundVariables)] : null;
-};
-
-interface FormattedRegexVariables {
-  original: string;
-  firstUseEdit: string;
-  followingUseEdit: string;
-}
-export const formatVariableReplacements = (
-  variablesFound: string[]
-): FormattedRegexVariables[] =>
-  variablesFound.map((regexVar) => ({
-    original: regexVar,
-    firstUseEdit: regexVar.replace(/\\k<.+?>/, ""),
-    followingUseEdit: regexVar.replace(/\?<.+?>.+?(?=\\k<.+?>)/, ""),
-  }));
-
-export const updateFirstVariableUsage = (
-  RXPString: string,
-  regexVar: FormattedRegexVariables[]
-): string => {
-  return regexVar.reduce((currentString, varFound) => {
-    return currentString.replace(varFound.original, varFound.firstUseEdit);
-  }, RXPString);
-};
-
-export const updateSubsequentVariables = (
-  RXPString: string,
-  regexVar: FormattedRegexVariables[]
-): string => {
-  return regexVar.reduce((currentString, varFound) => {
-    const searchPattern = new RegExp(parseText(varFound.original), "g");
-    return currentString.replace(searchPattern, varFound.followingUseEdit);
-  }, RXPString);
-};
-
-export const updateVariables = (
-  RXPString: string,
-  replacements: FormattedRegexVariables[]
-): string =>
-  updateSubsequentVariables(
-    updateFirstVariableUsage(RXPString, replacements),
-    replacements
-  );
-
-export const formatRXPVariables = (RXPString: string): string => {
-  const regexVariables = getUneditedRegexVariables(RXPString);
-  if (regexVariables) {
-    const replacements = formatVariableReplacements(regexVariables);
-    return updateVariables(RXPString, replacements);
-  } else {
-    return RXPString;
-  }
-};
-
-// format the text that has been modified by the RXP constructor
-// format any requested flags
-// and return a regex literal
-const constructRXP = (RXPString: string, flags: string[]) => {
-  if (!validateFlags(flags)) {
-    throw new Error(
-      `Invalid flag letter/ keyword submitted. Flags must be one of the following: ${validFlags.join(
-        ", "
-      )}`
-    );
-  }
-  const flagMarkers = constructFlagMarkers(flags);
-  const formatWithVariables = formatRXPVariables(RXPString);
-  return new RegExp(formatWithVariables, flagMarkers);
-};
 
 ///////////////////////
 // RXP Modifier Options
@@ -339,6 +184,8 @@ class IsVariableOptions extends RXPBaseUnit {
     };
   }
 }
+
+// define all possible options for step 5
 class Step5Options {
   protected _text: string;
 
@@ -469,6 +316,8 @@ class Step3OptionsWithoutAtEnd extends Step3OptionsWithoutStep4 {
   }
 }
 
+///////////// RXP Steps /////////////
+//
 // after step 1 'or' is called, it can be called again
 // such as init("sample").or("other").or("maybe a third")
 // all subsequent steps are included
@@ -505,16 +354,6 @@ export class RXPStep1 extends Step3Options {
   occursBetween = (min: number, max: number): RXPStep3 =>
     new RXPStep3(occursBetween(this.text, min, max));
 }
-
-export type OptionsFromStep3To5 =
-  | Step3Options
-  | Step3OptionsWithGreedyConverter
-  | Step3OptionsWithoutAtStart
-  | Step3OptionsWithoutAtEnd
-  | Step3OptionsWithoutStep4
-  | Step4Options
-  | Step4OptionsWithoutStep5
-  | Step5Options;
 
 class RXPStep3 extends RXPBaseUnit {
   and: Step3Options;
@@ -568,7 +407,7 @@ class RXPStep5 extends RXPBaseUnit {
 }
 
 // initialize RXP constructor, accepting a series
-// of unescaped strings or escaped RXP units
+// of unescaped strings, regex literals, or escaped RXP units
 // and formatting them before returning step 1 of the constructor
 const init = (
   text: string | RegExp | RXPUnit,

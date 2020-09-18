@@ -8,7 +8,7 @@ const RXP = {
   shorthand,
 };
 export default RXP;
-export { init, presets, shorthand };
+export { RXP, init, presets, shorthand };
 
 // destructure presets and shorthand and provide for export as well
 const {

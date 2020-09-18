@@ -1,15 +1,12 @@
-import uniqid from "uniqid";
 import { RXPUnit } from "./init";
-
-// RXP Units //
-// user-submitted strings will be formatted to escape special characters
-// already formatted strings will be stored in RXP Units to distinguish them
-// a combination of user-strings and RXP Units can be submitted
-// to text-transform functions and will be parsed before running the function
 
 // format user-submitted strings to escape special characters
 export const formatRegex: ModifyText = (text) =>
   text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+
+// convert a regex literal to a string, removing borders
+export const convertRegexToString = (regex: RegExp): string =>
+  `${regex}`.replace(/^\//, "").replace(/(\/(g|i|m|s|u|y){0,6})$/, "");
 
 // Text Transformations //
 // the following functions transform a given string
@@ -28,14 +25,10 @@ type CombineTextWithRXPUnits = (
 type SetFrequency = (text: string, amount: number) => string;
 type SetRange = (text: string, min: number, max: number) => string;
 
-// wrap regex text in a non-capture grouping
+// wrap regex string in a non-capture grouping
 export const withNonCaptureGrouping = (text: string): string => `(?:${text})`;
 
-// convert a regex literal to a string, removing borders
-export const convertRegexToString = (regex: RegExp): string =>
-  `${regex}`.replace(/^\//, "").replace(/(\/(g|i|m|s|u|y){0,6})$/, "");
-
-// receive string or RXPUnit and format text accordingly
+// receive string, regex, or RXP Unit and format text accordingly
 type ParseText = (text: string | RegExp | RXPUnit) => string;
 export const parseText: ParseText = (text) => {
   if (typeof text === "string") {
@@ -70,9 +63,6 @@ export const or = withTextParsing((text, newText, ...extra) =>
     [text, newText, ...extra].map((x) => withNonCaptureGrouping(x)).join("|")
   )
 );
-
-export const isOptional: ModifyText = (text) =>
-  `${withNonCaptureGrouping(text)}?`;
 
 export const occurs: SetFrequency = (text, amount) =>
   `${withNonCaptureGrouping(text)}{${amount}}`;
@@ -113,14 +103,12 @@ export const notPrecededBy = withTextParsing(
     `${[notPreceding, ...extra].map((x) => `(?<!${x})`).join("")}${text}`
 );
 
-export const isCaptured: ModifyText = (text) => `(${text})`;
-export const isVariable: ModifyText = (text) => {
-  const uniqueName = uniqid().replace(/[0-9]/g, "");
-  return `(?<${uniqueName}>${text}\\k<${uniqueName}>)`;
-};
-
 export const atStart: ModifyText = (text) => `^${withNonCaptureGrouping(text)}`;
 export const atEnd: ModifyText = (text) => `${withNonCaptureGrouping(text)}$`;
+
+export const isOptional: ModifyText = (text) =>
+  `${withNonCaptureGrouping(text)}?`;
+export const isCaptured: ModifyText = (text) => `(${text})`;
 
 const formatText = {
   or,
@@ -138,7 +126,6 @@ const formatText = {
   atEnd,
   isOptional,
   isCaptured,
-  isVariable,
 };
 
 export default formatText;
