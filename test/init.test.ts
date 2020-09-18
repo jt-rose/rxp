@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "chai";
 import init, {
   RXPUnit,
-  OptionsFromStep3To5,
+  AndOptions,
   RXPBaseUnit,
   getUneditedRegexVariables,
   formatVariableReplacements,
@@ -63,7 +63,7 @@ const allKeys = [
 
 // return which keys/ getters are found in an RXP object
 // in is used in place of Object.keys(...) to find getters
-type RXPUnitOrOptions = RXPUnit | OptionsFromStep3To5;
+type RXPUnitOrOptions = RXPUnit | AndOptions;
 const findKeysAndGetters = (obj: RXPUnitOrOptions) => {
   return allKeys.filter((key) => key in obj);
 };

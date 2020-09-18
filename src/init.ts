@@ -65,28 +65,64 @@ export class RXPBaseUnit {
   }
   construct = (...flags: string[]): RegExp => constructRXP(this.text, flags);
 }
-/*
-interface MinimalRXP extends RXPBaseUnit {
-  and?:;
-  or?: () => RXPStep1;
-  occurs?:() => RXPStep3;
+
+interface IsOptionalAndOptions {
+  isCaptured: RXPBaseUnit;
+}
+
+interface IsCapturedAndOptions {
+  isOptional: RXPBaseUnit;
+  isVariable: RXPBaseUnit;
+}
+interface IsVariableAndOptions {
+  isOptional: RXPBaseUnit;
+}
+
+export type AndOptions =
+  | Step3Options
+  | Step3OptionsWithGreedyConverter
+  | Step3OptionsWithoutAtEnd
+  | Step3OptionsWithoutAtStart
+  | Step3OptionsWithoutStep4
+  | Step4Options
+  | Step4OptionsWithoutStep5
+  | Step5Options
+  | IsOptionalAndOptions
+  | IsCapturedAndOptions
+  | IsVariableAndOptions;
+
+export interface RXPUnit extends RXPBaseUnit {
+  and?: AndOptions;
+  or?: (newText: NewText, ...extra: ExtraText) => RXPStep1;
+  occurs?: (amount: number) => RXPStep3;
   doesNotOccur?: RXPStep4WithoutStep5;
   occursOnceOrMore?: RXPStep3WithGreedyConverter;
-  occursZeroOrMore?: RXPStep3WithGreedyConverter
-  occursAtLeast?: () => RXPStep3;
-  occursBetween?: () => RXPStep3;
-  followedBy?: () => RXPStep3WithoutAtEnd | RXPStep3WithoutStep4;
-  notFollowedBy?: () => RXPStep3WithoutAtEnd | RXPStep3WithoutStep4;
-  precededBy?: () => RXPStep3WithoutAtStart | RXPStep3WithoutStep4;
-  notPrecededBy?: () => RXPStep3WithoutAtStart | RXPStep3WithoutStep4;
+  occursZeroOrMore?: RXPStep3WithGreedyConverter;
+  occursAtLeast?: (min: number) => RXPStep3;
+  occursBetween?: (min: number, max: number) => RXPStep3;
+  followedBy?: (
+    newText: NewText,
+    ...extra: ExtraText
+  ) => RXPStep3WithoutAtEnd | RXPStep3WithoutStep4;
+  notFollowedBy?: (
+    newText: NewText,
+    ...extra: ExtraText
+  ) => RXPStep3WithoutAtEnd | RXPStep3WithoutStep4;
+  precededBy?: (
+    newText: NewText,
+    ...extra: ExtraText
+  ) => RXPStep3WithoutAtStart | RXPStep3WithoutStep4;
+  notPrecededBy?: (
+    newText: NewText,
+    ...extra: ExtraText
+  ) => RXPStep3WithoutAtStart | RXPStep3WithoutStep4;
   atStart?: RXPStep5;
   atEnd?: RXPStep5;
   isOptional?: IsOptionalOptions | RXPBaseUnit;
-  isCaptured?:
-  isVariable?:
-
-}*/
-
+  isCaptured?: IsCapturedOptions | RXPBaseUnit;
+  isVariable?: IsVariableOptions | RXPBaseUnit;
+}
+/*
 // all possible RXP units
 export type RXPUnit =
   | RXPBaseUnit
@@ -98,7 +134,7 @@ export type RXPUnit =
   | RXPStep3WithoutStep4
   | RXPStep4WithoutStep5
   | RXPStep5;
-
+*/
 // define acceptable flag names for RegExp constructor
 const defaultFlag = "";
 const defaultFlagKeyWord = "default";
@@ -290,6 +326,19 @@ class IsCapturedOptions extends RXPBaseUnit {
   }
 }
 
+class IsVariableOptions extends RXPBaseUnit {
+  and: {
+    isOptional: RXPBaseUnit;
+  };
+  constructor(text: string) {
+    super(text);
+    this.and = {
+      get isOptional() {
+        return new RXPBaseUnit(isOptional(text));
+      },
+    };
+  }
+}
 class Step5Options {
   protected _text: string;
 
@@ -303,12 +352,7 @@ class Step5Options {
     return new IsCapturedOptions(isCaptured(this._text));
   }
   get isVariable() {
-    return {
-      ...new RXPBaseUnit(isVariable(this._text)),
-      and: {
-        isOptional: new IsOptionalOptions(isOptional(isVariable(this._text))),
-      },
-    };
+    return new IsVariableOptions(isVariable(this._text));
   }
 }
 
@@ -526,7 +570,10 @@ class RXPStep5 extends RXPBaseUnit {
 // initialize RXP constructor, accepting a series
 // of unescaped strings or escaped RXP units
 // and formatting them before returning step 1 of the constructor
-const init = (text: NewText, ...extra: ExtraText): RXPStep1 => {
+const init = (
+  text: string | RegExp | RXPUnit,
+  ...extra: ExtraText
+): RXPStep1 => {
   const formattedText = [text, ...extra].map((x) => parseText(x)).join("");
   return new RXPStep1(formattedText);
 };

@@ -1,39 +1,41 @@
 import { lettersWithAnyCase } from "./presets";
 import init, {
-  NewText,
   ExtraText,
   RXPStep1,
   RXPStep3WithGreedyConverter,
   RXPStep4WithoutStep5,
   IsOptionalOptions,
+  RXPUnit,
 } from "./init";
 
 // Provide shorthand functions to improve readability
 // for common regex constructions
 
 const either = (
-  firstOption: NewText,
-  secondOption: NewText,
+  firstOption: string | RegExp | RXPUnit,
+  secondOption: string | RegExp | RXPUnit,
   ...extraOptions: ExtraText
 ): RXPStep1 => init(firstOption).or(secondOption, ...extraOptions);
 
 const oneOrMore = (
-  text: NewText,
+  text: string | RegExp | RXPUnit,
   ...extra: ExtraText
 ): RXPStep3WithGreedyConverter => init(text, ...extra).occursOnceOrMore;
 
 const zeroOrMore = (
-  text: NewText,
+  text: string | RegExp | RXPUnit,
   ...extra: ExtraText
 ): RXPStep3WithGreedyConverter => init(text, ...extra).occursZeroOrMore;
 
 const noOccurenceOf = (
-  text: NewText,
+  text: string | RegExp | RXPUnit,
   ...extra: ExtraText
 ): RXPStep4WithoutStep5 => init(text, ...extra).doesNotOccur;
 
-const optional = (text: NewText, ...extra: ExtraText): IsOptionalOptions =>
-  init(text, ...extra).isOptional;
+const optional = (
+  text: string | RegExp | RXPUnit,
+  ...extra: ExtraText
+): IsOptionalOptions => init(text, ...extra).isOptional;
 
 const upperOrLowerCase = (letter: string): RXPStep1 => {
   const confirmValidLetter =
@@ -50,10 +52,11 @@ const upperOrLowerCase = (letter: string): RXPStep1 => {
 // wrapped between other text. For example:
 // const withParentheses = wrapRXP("(", ")")
 // will allow withParentheses("sample") to return init("(sample)")
-const wrapRXP = (before: NewText, after: NewText) => (
-  wrappedItem: NewText,
-  ...extra: ExtraText
-): RXPStep1 => init(before, wrappedItem, ...extra, after);
+const wrapRXP = (
+  before: string | RegExp | RXPUnit,
+  after: string | RegExp | RXPUnit
+) => (wrappedItem: string | RegExp | RXPUnit, ...extra: ExtraText): RXPStep1 =>
+  init(before, wrappedItem, ...extra, after);
 
 const shorthand = {
   either,
