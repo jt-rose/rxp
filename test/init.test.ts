@@ -260,28 +260,35 @@ describe("RXP Constructor - All Steps", () => {
     const testIsOptionalAndCaptured = testIsOptional.and.isCaptured;
     const testIsCaptured = sample.isCaptured;
     const testIsCapturedAndOptional = testIsCaptured.and.isOptional;
-    const testIsCapturedAndVariable = testIsCaptured.and.isVariable;
-    const testIsVariable = sample.isVariable;
+    const testIsVariable = sample.isVariable();
+    const testIsNamedVariable = sample.isVariable("namedVar");
+
     it("valid transformation of text", () => {
       expect(testIsOptional.text).to.equal("(?:sample)?");
       expect(testIsOptionalAndCaptured.text).to.equal("((?:sample)?)");
 
       expect(testIsCaptured.text).to.equal("(sample)");
       expect(testIsCapturedAndOptional.text).to.equal("(?:(sample))?");
-      const correctCaptureAndVariable = /\(\?<.+>\(sample\)\\k<.+?>\)/.test(
-        testIsCapturedAndVariable.text
+
+      expect(testIsNamedVariable.text).to.equal(
+        "(?<namedVar>sample\\k<namedVar>)"
       );
-      expect(correctCaptureAndVariable).to.be.true;
 
       const correctVariableTransformation = /\(\?<.+>sample\\k<.+?>\)/.test(
         testIsVariable.text
       );
       expect(correctVariableTransformation).to.be.true;
+
+      // confirm uniqid is re-running with each pass
+      expect(sample.isVariable().text).to.not.equal(sample.isVariable().text);
     });
     it("valid RXP method options after step 5 options", () => {
       expect(findKeysAndGetters(testIsOptional)).to.have.same.members(
         step5Keys
       );
+      expect(findKeysAndGetters(testIsOptional.and)).to.have.same.members([
+        "isCaptured",
+      ]);
       expect(typeof testIsOptional.and.isCaptured.text).to.equal("string");
       expect(
         findKeysAndGetters(testIsOptionalAndCaptured)
@@ -290,18 +297,20 @@ describe("RXP Constructor - All Steps", () => {
       expect(findKeysAndGetters(testIsCaptured)).to.have.same.members(
         step5Keys
       );
+      expect(findKeysAndGetters(testIsCaptured.and)).to.have.same.members([
+        "isOptional",
+      ]);
       expect(typeof testIsCaptured.and.isOptional.text).to.equal("string");
-      expect(typeof testIsCaptured.and.isVariable.text).to.equal("string");
       expect(
         findKeysAndGetters(testIsCapturedAndOptional)
-      ).to.have.same.members(everyStepKeys);
-      expect(
-        findKeysAndGetters(testIsCapturedAndVariable)
       ).to.have.same.members(everyStepKeys);
 
       expect(findKeysAndGetters(testIsVariable)).to.have.same.members(
         step5Keys
       );
+      expect(findKeysAndGetters(testIsVariable.and)).to.have.same.members([
+        "isOptional",
+      ]);
     });
   });
   describe("RXP Final Step - constructor", () => {
@@ -314,7 +323,7 @@ describe("RXP Constructor - All Steps", () => {
       .and.precededBy("before")
       .and.atEnd.and.isCaptured.and.isOptional.construct();
 
-    const sampleVariable = init("var").isVariable;
+    const sampleVariable = init("var").isVariable();
     const sampleWithVariables = init(
       sampleVariable,
       "some text",
@@ -339,21 +348,21 @@ describe("RXP Constructor - All Steps", () => {
       );
       expect(expectedVariableConstruct).to.be.true;
       expect(withoutVariableNames).to.equal("/(?<>var)some text(\\k<>)/");
-      it("correct matching for variables", () => {
-        const varSample = init("a").or("b").isVariable;
-        const testVars = init(varSample, " and ", varSample).construct();
-        expect(testVars.test("a and a")).to.be.true;
-        expect(testVars.test("b and b")).to.be.true;
-        expect(testVars.test("a and b")).to.be.false;
+    });
+    it("correct matching for variables", () => {
+      const varSample = init("a").or("b").isVariable();
+      const testVars = init(varSample, " and ", varSample).construct();
+      expect(testVars.test("a and a")).to.be.true;
+      expect(testVars.test("b and b")).to.be.true;
+      expect(testVars.test("a and b")).to.be.false;
 
-        const varSample2 = presets.anyDigit.occurs(3).and.isVariable;
-        const testVars2 = init(varSample2, " and ", varSample2).construct();
-        expect(testVars2.test("333 and 333")).to.be.true;
-        expect(testVars2.test("789 and 789")).to.be.true;
-        expect(testVars2.test("a and b")).to.be.false;
-        expect(testVars2.test("111 and 333")).to.be.false;
-        expect(testVars2.test("123 and 456")).to.be.false;
-      });
+      const varSample2 = presets.anyDigit.occurs(3).and.isVariable();
+      const testVars2 = init(varSample2, " and ", varSample2).construct();
+      expect(testVars2.test("333 and 333")).to.be.true;
+      expect(testVars2.test("789 and 789")).to.be.true;
+      expect(testVars2.test("a and b")).to.be.false;
+      expect(testVars2.test("111 and 333")).to.be.false;
+      expect(testVars2.test("123 and 456")).to.be.false;
     });
     it("valid construction of regex flags", () => {
       // test single flag constructors

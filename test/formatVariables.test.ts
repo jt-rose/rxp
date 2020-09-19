@@ -1,3 +1,4 @@
+import uniqid from "uniqid";
 import "mocha";
 import { expect } from "chai";
 import {
@@ -9,9 +10,16 @@ import {
 
 describe("Format and parse regex variables", () => {
   it("render text with variable marker", () => {
-    const regexVariable = isVariable("var");
-    const testVariableFormatting = /\(\?<.+?>var\\k<.+?>\)/.test(regexVariable);
+    const regexVariable = isVariable("text", uniqid().replace(/[0-9]/g, ""));
+    const testVariableFormatting = /\(\?<.+?>text\\k<.+?>\)/.test(
+      regexVariable
+    );
     expect(testVariableFormatting).to.be.true;
+
+    const namedRegexVar = isVariable("text", "varName");
+    expect(namedRegexVar).to.equal("(?<varName>text\\k<varName>)");
+
+    expect(() => isVariable("text", "")).to.throw();
   });
   // RXP-style variables
   const RXPVar1 = "(?<varName>stuff\\k<varName>)";

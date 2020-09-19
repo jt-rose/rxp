@@ -1,4 +1,3 @@
-import uniqid from "uniqid";
 import { parseText } from "./formatText";
 
 // check RXP text for variables and format them correctly
@@ -14,9 +13,13 @@ import { parseText } from "./formatText";
 // for the initial variable declaration
 // and "(\\\\k<var>)" for subsequent uses
 
-export const isVariable = (text: string): string => {
-  const uniqueName = uniqid().replace(/[0-9]/g, "");
-  return `(?<${uniqueName}>${text}\\k<${uniqueName}>)`;
+export const isVariable = (text: string, variableName: string): string => {
+  if (variableName.length === 0) {
+    throw new Error(
+      "regex variable names must have at least one character and not be an empty string"
+    );
+  }
+  return `(?<${variableName}>${text}\\k<${variableName}>)`;
 };
 
 // find each unedited RXP variable

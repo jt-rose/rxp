@@ -1,3 +1,4 @@
+import uniqid from "uniqid";
 import {
   parseText,
   or,
@@ -78,7 +79,6 @@ interface IsOptionalAndOptions {
 
 interface IsCapturedAndOptions {
   isOptional: RXPBaseUnit;
-  isVariable: RXPBaseUnit;
 }
 interface IsVariableAndOptions {
   isOptional: RXPBaseUnit;
@@ -126,7 +126,7 @@ export interface RXPUnit extends RXPBaseUnit {
   atEnd?: RXPStep5;
   isOptional?: IsOptionalOptions | RXPBaseUnit;
   isCaptured?: IsCapturedOptions | RXPBaseUnit;
-  isVariable?: IsVariableOptions | RXPBaseUnit;
+  isVariable?: (variableName: string) => IsVariableOptions | RXPBaseUnit;
 }
 
 ///////////////////////
@@ -156,16 +156,12 @@ export class IsOptionalOptions extends RXPBaseUnit {
 class IsCapturedOptions extends RXPBaseUnit {
   and: {
     isOptional: RXPBaseUnit;
-    isVariable: RXPBaseUnit;
   };
   constructor(text: string) {
     super(text);
     this.and = {
       get isOptional() {
         return new RXPBaseUnit(isOptional(text));
-      },
-      get isVariable() {
-        return new RXPBaseUnit(isVariable(text));
       },
     };
   }
@@ -198,8 +194,8 @@ class Step5Options {
   get isCaptured() {
     return new IsCapturedOptions(isCaptured(this._text));
   }
-  get isVariable() {
-    return new IsVariableOptions(isVariable(this._text));
+  isVariable(variableName: string = uniqid().replace(/[0-9]/g, "")) {
+    return new IsVariableOptions(isVariable(this._text, variableName));
   }
 }
 
