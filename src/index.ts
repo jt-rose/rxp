@@ -40,17 +40,8 @@ const {
   either,
   oneOrMore,
   zeroOrMore,
-  noOccurenceOf,
   optional,
   upperOrLowerCase,
   wrapRXP,
 } = shorthand;
-export {
-  either,
-  oneOrMore,
-  zeroOrMore,
-  noOccurenceOf,
-  optional,
-  upperOrLowerCase,
-  wrapRXP,
-};
+export { either, oneOrMore, zeroOrMore, optional, upperOrLowerCase, wrapRXP };

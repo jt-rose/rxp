@@ -8,7 +8,6 @@ const everyStepKeys = ["text", "construct"];
 const onlyStep1Keys = ["or"];
 const onlyStep2Keys = [
   "occurs",
-  "doesNotOccur",
   "occursAtLeast",
   "occursOnceOrMore",
   "occursZeroOrMore",
@@ -96,7 +95,6 @@ describe("RXP Constructor - All Steps", () => {
   describe("RXP Step 2 - 'occurs' grouping", () => {
     const sample = init("sample");
     const testOccurs = sample.occurs(5);
-    const testDoesNotOccur = sample.doesNotOccur;
     const testOccursAtLeast = sample.occursAtLeast(3);
     const testOccursOnceOrMore = sample.occursOnceOrMore;
     const testGreedyOnceOrMore = testOccursOnceOrMore.and.isGreedy;
@@ -105,7 +103,6 @@ describe("RXP Constructor - All Steps", () => {
     const testOccursBetween = sample.occursBetween(2, 4);
     it("valid transformation of text", () => {
       expect(testOccurs.text).to.equal("(?:sample){5}");
-      expect(testDoesNotOccur.text).to.equal("[^(?:sample)]");
       expect(testOccursAtLeast.text).to.equal("(?:sample){3,}");
 
       expect(testOccursOnceOrMore.text).to.equal("(?:sample)+?");
@@ -162,14 +159,6 @@ describe("RXP Constructor - All Steps", () => {
       );
       expect(findKeysAndGetters(testGreedyZeroOrMore.and)).to.have.same.members(
         step3KeysAfterAnd
-      );
-
-      expect(findKeysAndGetters(testDoesNotOccur)).to.have.same.members([
-        ...everyStepKeys,
-        "and",
-      ]);
-      expect(findKeysAndGetters(testDoesNotOccur.and)).to.have.same.members(
-        onlyStep4Keys
       );
     });
   });

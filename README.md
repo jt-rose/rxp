@@ -183,7 +183,6 @@ const regexSearch = init(
 | init             | `const RXPSample = init("sample")`        | escapes text and initializes constructor |
 | or               | `RXPSample.or("other sample")`            | `(?:(?:sample)\|(?:other sample))`       |
 | occurs           | `RXPSample.occurs(4)`                     | `(?:sample){4}`                          |
-| doesNotOccur     | `RXPSample.doesNotOccur`                  | `[^(?:sample)]`                          |
 | occursOnceOrMore | `RXPSample.occursOnceOrMore`              | `(?:sample)+?`                           |
 | occursZeroOrMore | `RXPSample.occursZeroOrMore`              | `(?:sample)\*?`                          |
 | occursAtLeast    | `RXPSample.occursAtLeast(3)`              | `(?:sample){3,}`                         |
@@ -207,7 +206,6 @@ const regexSearch = init(
 | ---------------- | ------------------------ | -------------------------------------------------------- |
 | either           | `either("this", "that")` | `init("this").or("that")`                                |
 | optional         | `optional("text")`       | `init("text").isOptional`                                |
-| noOccurenceOf    | `noOccurenceOf("text")`  | `init("text").doesNotOccur`                              |
 | oneOrMore        | `oneOrMore("text")`      | `init("text").occursOnceOrMore`                          |
 | zeroOrMore       | `zeroOrMore("text")`     | `init("text").occursZeroOrMore`                          |
 | upperOrLowerCase | `upperOrLowerCase("r")`  | `init("r").or("R")`                                      |

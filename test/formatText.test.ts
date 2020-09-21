@@ -10,7 +10,6 @@ import formatText, {
 const {
   or,
   occurs,
-  doesNotOccur,
   occursAtLeast,
   occursOnceOrMore,
   occursZeroOrMore,
@@ -99,11 +98,6 @@ describe("Define repetitions of supplied text", () => {
   it("render text with min-max frequency requirements", () => {
     const between2And5 = occursBetween("iguana", 2, 5);
     expect(between2And5).to.equal("(?:iguana){2,5}");
-  });
-
-  it("apply not-occuring marker", () => {
-    const noOccurence = doesNotOccur("nothing here");
-    expect(noOccurence).to.equal("[^(?:nothing here)]");
   });
 
   it("convert lazy searches to greedy searches", () => {

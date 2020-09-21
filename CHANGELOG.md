@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- regex variable names can now be set by the user, but a variable name can still be automatically generated through `uniqid` if no name argument is passed when using the `isVariable` method
+
+### Fixed
+
+- `doesNotOccurs` and `noOccurenceOf` did not work as intended when supplying arguments grater than a single character. To avoid confusion, these have been removed and the `...except(...)` preset functions/ negative lookaheads and lookbehinds can instead serve this purpose.
+
 ## [v1.2.1] - 2020-09-18
 
 ### Fixed

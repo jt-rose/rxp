@@ -4,7 +4,7 @@ import { RXPUnit } from "./init";
 export const formatRegex: ModifyText = (text) =>
   text.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 
-// convert a regex literal to a string, removing borders
+// convert a regex literal to a string, removing borders and flags
 export const convertRegexToString = (regex: RegExp): string =>
   `${regex}`.replace(/^\//, "").replace(/(\/(g|i|m|s|u|y){0,6})$/, "");
 
@@ -66,8 +66,6 @@ export const or = withTextParsing((text, newText, ...extra) =>
 
 export const occurs: SetFrequency = (text, amount) =>
   `${withNonCaptureGrouping(text)}{${amount}}`;
-export const doesNotOccur: ModifyText = (text) =>
-  `[^${withNonCaptureGrouping(text)}]`;
 export const occursAtLeast: SetFrequency = (text, min) =>
   `${withNonCaptureGrouping(text)}{${min},}`;
 export const occursOnceOrMore: ModifyText = (text) =>
@@ -113,7 +111,6 @@ export const isCaptured: ModifyText = (text) => `(${text})`;
 const formatText = {
   or,
   occurs,
-  doesNotOccur,
   occursAtLeast,
   occursOnceOrMore,
   occursZeroOrMore,

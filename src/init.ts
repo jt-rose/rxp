@@ -3,7 +3,6 @@ import {
   parseText,
   or,
   occurs,
-  doesNotOccur,
   occursOnceOrMore,
   occursZeroOrMore,
   occursAtLeast,
@@ -91,7 +90,6 @@ export type AndOptions =
   | Step3OptionsWithoutAtStart
   | Step3OptionsWithoutStep4
   | Step4Options
-  | Step4OptionsWithoutStep5
   | Step5Options
   | IsOptionalAndOptions
   | IsCapturedAndOptions
@@ -101,7 +99,6 @@ export interface RXPUnit extends RXPBaseUnit {
   and?: AndOptions;
   or?: (newText: NewText, ...extra: ExtraText) => RXPStep1;
   occurs?: (amount: number) => RXPStep3;
-  doesNotOccur?: RXPStep4WithoutStep5;
   occursOnceOrMore?: RXPStep3WithGreedyConverter;
   occursZeroOrMore?: RXPStep3WithGreedyConverter;
   occursAtLeast?: (min: number) => RXPStep3;
@@ -209,19 +206,6 @@ class Step4Options extends Step5Options {
   }
   get atEnd() {
     return new RXPStep5(atEnd(this._text));
-  }
-}
-
-class Step4OptionsWithoutStep5 {
-  private _text: string;
-  constructor(text: string) {
-    this._text = text;
-  }
-  get atStart() {
-    return new RXPBaseUnit(atStart(this._text));
-  }
-  get atEnd() {
-    return new RXPBaseUnit(atEnd(this._text));
   }
 }
 
@@ -336,9 +320,6 @@ export class RXPStep1 extends Step3Options {
   //step 2 methods - occurs
   occurs = (amount: number): RXPStep3 =>
     new RXPStep3(occurs(this.text, amount));
-  get doesNotOccur(): RXPStep4WithoutStep5 {
-    return new RXPStep4WithoutStep5(doesNotOccur(this.text));
-  }
   get occursOnceOrMore(): RXPStep3WithGreedyConverter {
     return new RXPStep3WithGreedyConverter(occursOnceOrMore(this.text));
   }
@@ -387,13 +368,7 @@ class RXPStep3WithoutStep4 extends RXPBaseUnit {
     this.and = new Step3OptionsWithoutStep4(text);
   }
 }
-export class RXPStep4WithoutStep5 extends RXPBaseUnit {
-  and: Step4OptionsWithoutStep5;
-  constructor(text: string) {
-    super(text);
-    this.and = new Step4OptionsWithoutStep5(text);
-  }
-}
+
 class RXPStep5 extends RXPBaseUnit {
   and: Step5Options;
   constructor(text: string) {

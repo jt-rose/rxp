@@ -3,7 +3,6 @@ import init, {
   ExtraText,
   RXPStep1,
   RXPStep3WithGreedyConverter,
-  RXPStep4WithoutStep5,
   IsOptionalOptions,
   RXPUnit,
 } from "./init";
@@ -26,11 +25,6 @@ const zeroOrMore = (
   text: string | RegExp | RXPUnit,
   ...extra: ExtraText
 ): RXPStep3WithGreedyConverter => init(text, ...extra).occursZeroOrMore;
-
-const noOccurenceOf = (
-  text: string | RegExp | RXPUnit,
-  ...extra: ExtraText
-): RXPStep4WithoutStep5 => init(text, ...extra).doesNotOccur;
 
 const optional = (
   text: string | RegExp | RXPUnit,
@@ -62,7 +56,6 @@ const shorthand = {
   either,
   oneOrMore,
   zeroOrMore,
-  noOccurenceOf,
   optional,
   upperOrLowerCase,
   wrapRXP,

@@ -5,7 +5,6 @@ const {
   either,
   oneOrMore,
   zeroOrMore,
-  noOccurenceOf,
   optional,
   upperOrLowerCase,
   wrapRXP,
@@ -26,11 +25,6 @@ describe("Valid shorthand functions", () => {
     const exampleZeroOrMore = zeroOrMore("sample");
     const expectedRXPText = "(?:sample)*?";
     expect(exampleZeroOrMore.text).to.equal(expectedRXPText);
-  });
-  it("correct RXP unit resulting from 'noOccurenceOf' shorthand", () => {
-    const exampleNoOccurenceOf = noOccurenceOf("sample");
-    const expectedRXPText = "[^(?:sample)]";
-    expect(exampleNoOccurenceOf.text).to.equal(expectedRXPText);
   });
   it("correct RXP unit resulting from 'optional' shorthand", () => {
     const exampleOptional = optional("option");
