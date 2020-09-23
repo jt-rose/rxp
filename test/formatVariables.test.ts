@@ -116,5 +116,15 @@ describe("Format and parse regex variables", () => {
     expect(testConvert).to.equal(
       "(?<var1>(\\w{3})\\k<var1>) is (?<var2>((\\d){3})-test\\k<var2>) (and) (?<var2>((\\d){3})-test\\k<var2>) with (?<var1>(\\w{3})\\k<var1>)"
     );
+
+    const regexVarWithEscapedParentheses = convertRegexToString(
+      /(?<var1>.\).) and \k<var1>/
+    );
+    const testConvertWithEscape = convertRegexVarsToRXPVars(
+      regexVarWithEscapedParentheses
+    );
+    expect(testConvertWithEscape).to.equal(
+      "(?<var1>.\\).\\k<var1>) and (?<var1>.\\).\\k<var1>)"
+    );
   });
 });

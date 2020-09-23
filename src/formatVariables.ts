@@ -107,9 +107,9 @@ type FindCP = (
 ) => FindCP | number | false;
 
 const findCP: FindCP = (text, currentIndex, nestedAmount) => {
-  if (text[currentIndex] === "(") {
+  if (text[currentIndex] === "(" && text[currentIndex - 1] !== "\\") {
     return findCP(text, currentIndex + 1, nestedAmount + 1);
-  } else if (text[currentIndex] === ")") {
+  } else if (text[currentIndex] === ")" && text[currentIndex - 1] !== "\\") {
     if (nestedAmount > 0) {
       return findCP(text, currentIndex + 1, nestedAmount - 1);
     } else {
