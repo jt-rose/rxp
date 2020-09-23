@@ -1,6 +1,6 @@
 {
   "name": "rxp",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "descriptive constructor for regular expressions",
   "main": "index.js",
   "types": "index.d.ts",
