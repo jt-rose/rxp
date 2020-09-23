@@ -39,14 +39,24 @@ describe("Test user text transformations", () => {
       "regex \\? with escape\\/"
     );
   });
+  it("correct conversion of regex literal variables to RXP-style variables", () => {
+    const regexWithVar = /(?<var1>\d{3}) and \k<var1>/;
+    const regexWithVar2 = /(?<var2>\w{3})/;
+
+    expect(parseText(regexWithVar)).to.equal(
+      "(?<var1>\\d{3}\\k<var1>) and (?<var1>\\d{3}\\k<var1>)"
+    );
+    expect(parseText(regexWithVar2)).to.equal("(?<var2>\\w{3}\\k<var2>)");
+    const combinedVars = /(?<var2>\w{3}) (and) (?<var1>\d{3}) and \k<var1> (w)(ith) (\k<var2>)/;
+    expect(parseText(combinedVars)).to.equal(
+      "(?<var2>\\w{3}\\k<var2>) (and) (?<var1>\\d{3}\\k<var1>) and (?<var1>\\d{3}\\k<var1>) (w)(ith) (?<var2>\\w{3}\\k<var2>)"
+    );
+  });
   it("correct text parsing between strings, regex literals, and rxp constructors", () => {
     expect(parseText("sample")).to.equal("sample");
     const sampleRXP = init("sampleRXP");
     expect(parseText(sampleRXP)).to.equal("sampleRXP");
     expect(parseText(/regex/g)).to.equal("regex");
-  });
-  it("correct text parsing applied to arrays", () => {
-    //
   });
 
   it("render text with optional marker", () => {

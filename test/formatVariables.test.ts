@@ -6,18 +6,18 @@ import {
   getUneditedRegexVariables,
   formatVariableReplacements,
   formatRXPVariables,
+  convertRegexVarsToRXPVars,
 } from "../src/formatVariables";
+import { convertRegexToString } from "../src/formatText";
 
 describe("Format and parse regex variables", () => {
   it("render text with variable marker", () => {
-    const regexVariable = isVariable("text", uniqid().replace(/[0-9]/g, ""));
-    const testVariableFormatting = /\(\?<.+?>text\\k<.+?>\)/.test(
-      regexVariable
-    );
+    const RXPVariable = isVariable("text", uniqid().replace(/[0-9]/g, ""));
+    const testVariableFormatting = /\(\?<.+?>text\\k<.+?>\)/.test(RXPVariable);
     expect(testVariableFormatting).to.be.true;
 
-    const namedRegexVar = isVariable("text", "varName");
-    expect(namedRegexVar).to.equal("(?<varName>text\\k<varName>)");
+    const namedRXPVar = isVariable("text", "varName");
+    expect(namedRXPVar).to.equal("(?<varName>text\\k<varName>)");
 
     expect(() => isVariable("text", "")).to.throw();
   });
@@ -43,7 +43,7 @@ describe("Format and parse regex variables", () => {
   const matchDouble = getUneditedRegexVariables(doubleRXPVariable);
   const matchTriple = getUneditedRegexVariables(tripleRXPVariable);
 
-  it("valid matching of regex variables", () => {
+  it("valid matching of rxp variables", () => {
     expect(getUneditedRegexVariables("")).to.equal(null);
 
     expect(matchSingle?.length).to.equal(1);
@@ -106,5 +106,15 @@ describe("Format and parse regex variables", () => {
     expect(formatDouble).to.equal(formattedDoubleVariable);
     expect(formatTriple).to.equal(formattedTripleVariable);
     expect(formatNoChanges).to.equal(noVariable);
+  });
+  it("convert user-submitted regex variables to RXP variables", () => {
+    const regexVar = convertRegexToString(
+      /(?<var1>(\w{3})) is (?<var2>((\d){3})-test) (and) \k<var2> with \k<var1>/g
+    );
+
+    const testConvert = convertRegexVarsToRXPVars(regexVar);
+    expect(testConvert).to.equal(
+      "(?<var1>(\\w{3})\\k<var1>) is (?<var2>((\\d){3})-test\\k<var2>) (and) (?<var2>((\\d){3})-test\\k<var2>) with (?<var1>(\\w{3})\\k<var1>)"
+    );
   });
 });

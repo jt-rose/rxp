@@ -71,6 +71,28 @@ describe("RXP Constructor - All Steps", () => {
       expect(init(/regex\.\?/g).text).to.equal("regex\\.\\?");
       expect(init("hello", /regex\.\?/g).text).to.equal("helloregex\\.\\?");
     });
+    it("correct formatting of regex literal variables", () => {
+      const regexWithVar = /(?<var1>\d{3}) and \k<var1>/;
+      const regexWithVar2 = /(?<var2>\w{3})/;
+
+      expect(init(regexWithVar).text).to.equal(
+        "(?<var1>\\d{3}\\k<var1>) and (?<var1>\\d{3}\\k<var1>)"
+      );
+      expect(init(regexWithVar2).text).to.equal("(?<var2>\\w{3}\\k<var2>)");
+      const combinedVars = init(
+        /(?<var2>\w{3})/,
+        " and ",
+        /(?<var1>\d{3}) and \k<var1>/,
+        " with ",
+        /(?<var2>\w{3})/
+      );
+      expect(combinedVars.text).to.equal(
+        "(?<var2>\\w{3}\\k<var2>) and (?<var1>\\d{3}\\k<var1>) and (?<var1>\\d{3}\\k<var1>) with (?<var2>\\w{3}\\k<var2>)"
+      );
+      expect(`${combinedVars.construct()}`).to.equal(
+        "/(?<var2>\\w{3}) and (?<var1>\\d{3}) and (\\k<var1>) with (\\k<var2>)/"
+      );
+    });
     it("correct composition of RXP units without additional escaping", () => {
       const sampleRXPUnit = new RXPBaseUnit("(?:pre-escaped sample)");
       const initialUnit = init(sampleRXPUnit);

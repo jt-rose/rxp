@@ -1,4 +1,5 @@
 import { RXPUnit } from "./init";
+import { convertRegexVarsToRXPVars } from "./formatVariables";
 
 // format user-submitted strings to escape special characters
 export const formatRegex: ModifyText = (text) =>
@@ -34,7 +35,7 @@ export const parseText: ParseText = (text) => {
   if (typeof text === "string") {
     return formatRegex(text);
   } else if (text instanceof RegExp) {
-    return convertRegexToString(text);
+    return convertRegexVarsToRXPVars(convertRegexToString(text));
   } else if ("text" && "construct" in text) {
     return text.text;
   } else {

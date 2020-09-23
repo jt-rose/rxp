@@ -1,4 +1,4 @@
-import { parseText } from "./formatText";
+import { parseText, formatRegex } from "./formatText";
 
 // check RXP text for variables and format them correctly
 //
@@ -85,5 +85,111 @@ export const formatRXPVariables = (RXPString: string): string => {
     return updateVariables(RXPString, replacements);
   } else {
     return RXPString;
+  }
+};
+
+////////////convert regex literal var to rxp var////////////
+
+// find the initial "(?<varName>" patterns of a regex variable
+// and return each starting index
+export const findRegexVarStartingIndices = (
+  text: string
+): number[] | undefined =>
+  text.match(/\(\?<.+?>/g)?.map((match) => text.indexOf(match));
+
+// search for the closing parentheses, avoiding any nested () groups
+// currentIndex needs to start at the index after the first "("
+// i.e. "hi( there)" would be 3
+type FindCP = (
+  text: string,
+  currentIndex: number,
+  nestedAmount: number
+) => FindCP | number | false;
+
+const findCP: FindCP = (text, currentIndex, nestedAmount) => {
+  if (text[currentIndex] === "(") {
+    return findCP(text, currentIndex + 1, nestedAmount + 1);
+  } else if (text[currentIndex] === ")") {
+    if (nestedAmount > 0) {
+      return findCP(text, currentIndex + 1, nestedAmount - 1);
+    } else {
+      return currentIndex;
+    }
+  } else if (text.length > currentIndex + 1) {
+    return findCP(text, currentIndex + 1, nestedAmount);
+  } else {
+    return false;
+  }
+};
+
+// take the starting index of the variable match
+// move to the next possible spot and start the recursive search function
+export const findClosingParentheses = (
+  text: string,
+  startingIndex: number
+): FindCP | number | false => findCP(text, startingIndex + 1, 0);
+
+// format data for regex variable replacements
+export class RegexVariableData {
+  variableName: string;
+  replacePattern: RegExp;
+  RXPVersion: string;
+
+  constructor(text: string, startIndex: number, closeIndex: number) {
+    const varFirstUse = text.slice(startIndex, closeIndex + 1);
+    const varName = varFirstUse.replace(/\(\?</, "").replace(/>.+/, "");
+    const subsequentUse = `\\k<${varName}>`;
+
+    const formattedFirstUse = formatRegex(varFirstUse);
+    const formattedSubsequentUse = formatRegex(subsequentUse);
+
+    const replacePattern = new RegExp(
+      `(${formattedFirstUse})|(\\(${formattedSubsequentUse}\\))|(${formattedSubsequentUse})`,
+      "g"
+    );
+
+    this.variableName = varName;
+    this.replacePattern = replacePattern;
+    this.RXPVersion =
+      varFirstUse.slice(0, varFirstUse.length - 1) + subsequentUse + ")";
+  }
+}
+
+const updateRegexVars = (text: string, regexVariables: RegexVariableData[]) =>
+  regexVariables.reduce(
+    (textToEdit, regexVar) =>
+      textToEdit.replace(regexVar.replacePattern, regexVar.RXPVersion),
+    text
+  );
+
+export const convertRegexVarsToRXPVars = (text: string): string => {
+  // check for any variables in regex and return starting index for each
+  const startingIndices = findRegexVarStartingIndices(text);
+  if (startingIndices) {
+    // find the closing index for each variable declaration
+    const closingIndices = startingIndices.map((i) =>
+      findClosingParentheses(text, i)
+    );
+    // reject with error if unterminated parentheses in regex
+    if (closingIndices.includes(false)) {
+      throw new Error(
+        "The submitted regex has a variable declaration with an unclosed parentheses"
+      );
+    }
+    // format data to update for each regex variable found
+    const regexVarData = startingIndices.map(
+      (startsAt, i) =>
+        new RegexVariableData(
+          text,
+          startsAt,
+          closingIndices[i] as number /* error already thrown if false found */
+        )
+    );
+    // edit regex string to convert regex variables to RXP format
+    const formattedRXPVariables = updateRegexVars(text, regexVarData);
+    return formattedRXPVariables;
+  } else {
+    // return unedited text if no variables found
+    return text;
   }
 };

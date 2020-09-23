@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.3.0] - 2020-09-23
+
 ### Added
 
 - regex variable names can now be set by the user, but a variable name can still be automatically generated through `uniqid` if no name argument is passed when using the `isVariable` method
+- when submitting regex literals with variables, RXP will now reconstruct them as RXP-style variables, allowing the order of variable references to be correctly parsed on the fly when using `construct`. Basically, if you have a regex with variables `/(?<var>sample-\d)...\k<var>/` and want to use it again when composing a new regex pattern, RXP can now combine these without running into any issues. For example, if the `init` function were called with the above regex submitted twice, it would reconfigure it to be `/(?<var>sample-\d)...(\k<var>)(\k<var>)...(\k<var>)/`
 
 ### Fixed
 
 - `doesNotOccurs` and `noOccurenceOf` did not work as intended when supplying arguments grater than a single character. To avoid confusion, these have been removed and the `...except(...)` preset functions/ negative lookaheads and lookbehinds can instead serve this purpose.
+- when using `uniqid` to generate automatic regex variable names, numbers cannot be used. These were originally simply filtered out, but this caused some of the resulting id's to be the same. To get around this, the generated numbers are now mapped out to corresponding letters to ensure the id's remain unique.
 
 ## [v1.2.1] - 2020-09-18
 
@@ -51,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial publish to NPM
 
-[unreleased]: https://github.com/jt-rose/rxp/compare/v1.2.1...HEAD
+[unreleased]: https://github.com/jt-rose/rxp/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/jt-rose/rxp/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/jt-rose/rxp/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/jt-rose/rxp/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/jt-rose/rxp/compare/v1.0.0...v1.1.0

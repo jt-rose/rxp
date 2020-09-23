@@ -178,6 +178,14 @@ class IsVariableOptions extends RXPBaseUnit {
   }
 }
 
+// convert numbers to letters for uniqid
+// to use as valid regex variable name
+// simply removing the numbers occasionally resulted in same id's
+const uniqidOnlyLetters = () =>
+  Array.from(uniqid())
+    .map((x) => (/\d/.test(x) ? "abcdefghij"[parseInt(x)] : x))
+    .join("");
+
 // define all possible options for step 5
 class Step5Options {
   protected _text: string;
@@ -191,7 +199,7 @@ class Step5Options {
   get isCaptured() {
     return new IsCapturedOptions(isCaptured(this._text));
   }
-  isVariable(variableName: string = uniqid().replace(/[0-9]/g, "")) {
+  isVariable(variableName: string = uniqidOnlyLetters()) {
     return new IsVariableOptions(isVariable(this._text, variableName));
   }
 }
