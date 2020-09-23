@@ -248,7 +248,7 @@ const emailMatch = init(
 
 ```javascript
 // original regex:
-/\w+\s[rR]ose/;
+/\w+?\s[rR]ose/;
 
 // RXP version:
 const nameMatch = init(
@@ -283,7 +283,7 @@ const zipCodeMatch = init(
 
 ```javascript
 //original regex:
-/\(?\d{3}\)?(?:-|\s)?\d{3}(?:-|\s)?\d{4}(?:\s[eE]xt.:\s\d{2,4})?/;
+/\(?\d{3}\)?(?:-|\s)?\d{3}(?:-|\s)?\d{4}(?:\s[eE]xt.:\s\d{2,4})?/g;
 
 // RXP version:
 const areaCode = init(
