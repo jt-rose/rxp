@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.3.1] - 2020-09-23
+
+### Fixed
+
+- fixed issue on regex variable deconstruction that did not correctly interpret escaped parentheses, causing the full variable declaration to not be matched if `\\(` or `\\)` present
+
 ## [v1.3.0] - 2020-09-23
 
 ### Added
@@ -55,7 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial publish to NPM
 
-[unreleased]: https://github.com/jt-rose/rxp/compare/v1.3.0...HEAD
+[unreleased]: https://github.com/jt-rose/rxp/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/jt-rose/rxp/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/jt-rose/rxp/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/jt-rose/rxp/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/jt-rose/rxp/compare/v1.1.0...v1.2.0
