@@ -123,8 +123,8 @@ escaped.text; // "escape \\. and \\?"
 The `init` function can also accept regex literals or other RXP units. When providing another RXP unit, the full constructor object should be provided and not just the `.text` property to avoid escaping special characters a second time:
 
 ```javascript
-const newSample = init("combine with ", /regex literal/, escaped);
-newSample.text; // "combine with regex literalescape \\. and \\?"
+const newSample = init("combine with ", /regex literal/, "and", escaped);
+newSample.text; // "combine with regex literal and escape \\. and \\?"
 ```
 
 ##### Modify Behavior
@@ -210,6 +210,9 @@ const regexSearch = init(
 | zeroOrMore       | `zeroOrMore("text")`     | `init("text").occursZeroOrMore`                          |
 | upperOrLowerCase | `upperOrLowerCase("r")`  | `init("r").or("R")`                                      |
 | wrapRXP          | `wrapRXP("(", ")")`      | new function: `(innerText) => init("(", innerText, ")")` |
+| withBoundaries   | `withBoundaries("land")` | `init(/\b/, "land", /\b/)`\*                             |
+
+\* with `occurs` modifiers removed
 
 #### Presets
 

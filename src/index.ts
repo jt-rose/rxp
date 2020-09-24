@@ -43,5 +43,14 @@ const {
   optional,
   upperOrLowerCase,
   wrapRXP,
+  withBoundaries,
 } = shorthand;
-export { either, oneOrMore, zeroOrMore, optional, upperOrLowerCase, wrapRXP };
+export {
+  either,
+  oneOrMore,
+  zeroOrMore,
+  optional,
+  upperOrLowerCase,
+  wrapRXP,
+  withBoundaries,
+};

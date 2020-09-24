@@ -8,6 +8,7 @@ const {
   optional,
   upperOrLowerCase,
   wrapRXP,
+  withBoundaries,
 } = shorthand;
 
 describe("Valid shorthand functions", () => {
@@ -43,5 +44,17 @@ describe("Valid shorthand functions", () => {
     const exampleWrapper = wrapParentheses("sample");
     const expectedRXPText = "(?:\\[)?sample(?:\\])?";
     expect(exampleWrapper.text).to.equal(expectedRXPText);
+  });
+  it("correct RXP unit resulting from 'withBoundaries' shorthand", () => {
+    const testWB = withBoundaries("sample", "/", /sample2/);
+    expect(`${testWB.construct()}`).to.equal(`${/\bsample\/sample2\b/}`);
+    expect("occurs" in testWB).to.be.false;
+    expect("occurs" in testWB.or("option")).to.be.false;
+    expect(`${testWB.or("option(").construct()}`).to.equal(
+      `${/(?:(?:\bsample\/sample2\b)|(?:option\())/}`
+    );
+    expect(testWB.construct().test("hi sample/sample2 and bye")).to.be.true;
+    expect(testWB.construct().test("hisample/sample2 and bye")).to.be.false;
+    expect(testWB.construct().test("hi sample/sample2and bye")).to.be.false;
   });
 });

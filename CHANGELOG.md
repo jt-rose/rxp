@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.0] - 2020-09-24
+
+## Added
+
+- added `withBoundaries` function to initialize an RXP unit with `\b` word boundaries on each side. A custom constructor class was used to remove the step 2 - occurs family of modifiers as these would not work with word boundaries
+
+## Changed
+
+- replaced `NewText` type for constructor arguments with specific `string | RegExp | RXPUnit` types listed to improve intellisense recommendations
+
 ## [v1.3.1] - 2020-09-23
 
 ### Fixed
@@ -61,7 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial publish to NPM
 
-[unreleased]: https://github.com/jt-rose/rxp/compare/v1.3.1...HEAD
+[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/jt-rose/rxp/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/jt-rose/rxp/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/jt-rose/rxp/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/jt-rose/rxp/compare/v1.2.0...v1.2.1

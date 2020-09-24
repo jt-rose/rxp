@@ -5,7 +5,10 @@ import init, {
   RXPStep3WithGreedyConverter,
   IsOptionalOptions,
   RXPUnit,
+  RXPBaseUnit,
+  Step3Options,
 } from "./init";
+import { parseText, or } from "./formatText";
 
 // Provide shorthand functions to improve readability
 // for common regex constructions
@@ -52,6 +55,34 @@ const wrapRXP = (
 ) => (wrappedItem: string | RegExp | RXPUnit, ...extra: ExtraText): RXPStep1 =>
   init(before, wrappedItem, ...extra, after);
 
+// wrap text in \b word boundaries and remove RXP - occurs options
+// to avoid faulty regex
+const withBoundaries = (
+  text: string | RegExp | RXPUnit,
+  ...extra: ExtraText
+): WithBoundaries => {
+  const formattedText = [/\b/, text, ...extra, /\b/]
+    .map((x) => parseText(x))
+    .join("");
+  return new WithBoundaries(formattedText);
+};
+
+export class WithBoundaries extends Step3Options {
+  text: string;
+  construct: (...flags: string[]) => RegExp; //needs testing
+
+  constructor(text: string) {
+    super(text);
+    const baseUnit = new RXPBaseUnit(text);
+    this.text = baseUnit.text;
+    this.construct = baseUnit.construct;
+  }
+  or = (
+    newText: string | RegExp | RXPUnit,
+    ...extra: ExtraText
+  ): WithBoundaries => new WithBoundaries(or(this.text, newText, ...extra));
+}
+
 const shorthand = {
   either,
   oneOrMore,
@@ -59,5 +90,6 @@ const shorthand = {
   optional,
   upperOrLowerCase,
   wrapRXP,
+  withBoundaries,
 };
 export default shorthand;

@@ -19,6 +19,7 @@ import {
 } from "./formatText";
 import { isVariable } from "./formatVariables";
 import constructRXP from "./constructRXP";
+import { WithBoundaries } from "./shorthand";
 
 // The RXP constructor receives an unformatted string, a regex literal,
 // or an already formatted RXP unit and prepares them to be converted
@@ -97,7 +98,7 @@ export type AndOptions =
 
 export interface RXPUnit extends RXPBaseUnit {
   and?: AndOptions;
-  or?: (newText: NewText, ...extra: ExtraText) => RXPStep1;
+  or?: (newText: NewText, ...extra: ExtraText) => RXPStep1 | WithBoundaries;
   occurs?: (amount: number) => RXPStep3;
   occursOnceOrMore?: RXPStep3WithGreedyConverter;
   occursZeroOrMore?: RXPStep3WithGreedyConverter;
@@ -217,24 +218,27 @@ class Step4Options extends Step5Options {
   }
 }
 
-class Step3Options extends Step4Options {
+export class Step3Options extends Step4Options {
   constructor(text: string) {
     super(text);
   }
-  followedBy = (newText: NewText, ...extra: ExtraText): RXPStep3WithoutAtEnd =>
+  followedBy = (
+    newText: string | RegExp | RXPUnit,
+    ...extra: ExtraText
+  ): RXPStep3WithoutAtEnd =>
     new RXPStep3WithoutAtEnd(followedBy(this._text, newText, ...extra));
   notFollowedBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutAtEnd =>
     new RXPStep3WithoutAtEnd(notFollowedBy(this._text, newText, ...extra));
   precededBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutAtStart =>
     new RXPStep3WithoutAtStart(precededBy(this._text, newText, ...extra));
   notPrecededBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutAtStart =>
     new RXPStep3WithoutAtStart(notPrecededBy(this._text, newText, ...extra));
@@ -253,17 +257,23 @@ class Step3OptionsWithoutStep4 extends Step5Options {
   constructor(text: string) {
     super(text);
   }
-  followedBy = (newText: NewText, ...extra: ExtraText): RXPStep3WithoutStep4 =>
+  followedBy = (
+    newText: string | RegExp | RXPUnit,
+    ...extra: ExtraText
+  ): RXPStep3WithoutStep4 =>
     new RXPStep3WithoutStep4(followedBy(this._text, newText, ...extra));
   notFollowedBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutStep4 =>
     new RXPStep3WithoutStep4(notFollowedBy(this._text, newText, ...extra));
-  precededBy = (newText: NewText, ...extra: ExtraText): RXPStep3WithoutStep4 =>
+  precededBy = (
+    newText: string | RegExp | RXPUnit,
+    ...extra: ExtraText
+  ): RXPStep3WithoutStep4 =>
     new RXPStep3WithoutStep4(precededBy(this._text, newText, ...extra));
   notPrecededBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutStep4 =>
     new RXPStep3WithoutStep4(notPrecededBy(this._text, newText, ...extra));
@@ -274,12 +284,12 @@ class Step3OptionsWithoutAtStart extends Step3OptionsWithoutStep4 {
     super(text);
   }
   precededBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutAtStart =>
     new RXPStep3WithoutAtStart(precededBy(this._text, newText, ...extra));
   notPrecededBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutAtStart =>
     new RXPStep3WithoutAtStart(notPrecededBy(this._text, newText, ...extra));
@@ -292,10 +302,13 @@ class Step3OptionsWithoutAtEnd extends Step3OptionsWithoutStep4 {
   constructor(text: string) {
     super(text);
   }
-  followedBy = (newText: NewText, ...extra: ExtraText): RXPStep3WithoutAtEnd =>
+  followedBy = (
+    newText: string | RegExp | RXPUnit,
+    ...extra: ExtraText
+  ): RXPStep3WithoutAtEnd =>
     new RXPStep3WithoutAtEnd(followedBy(this._text, newText, ...extra));
   notFollowedBy = (
-    newText: NewText,
+    newText: string | RegExp | RXPUnit,
     ...extra: ExtraText
   ): RXPStep3WithoutAtEnd =>
     new RXPStep3WithoutAtEnd(notFollowedBy(this._text, newText, ...extra));
@@ -323,7 +336,7 @@ export class RXPStep1 extends Step3Options {
     this.construct = baseUnit.construct;
   }
   // step 1 method - or
-  or = (newText: NewText, ...extra: ExtraText): RXPStep1 =>
+  or = (newText: string | RegExp | RXPUnit, ...extra: ExtraText): RXPStep1 =>
     new RXPStep1(or(this.text, newText, ...extra));
   //step 2 methods - occurs
   occurs = (amount: number): RXPStep3 =>
