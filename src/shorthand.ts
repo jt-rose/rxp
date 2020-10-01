@@ -1,5 +1,6 @@
 import { lettersWithAnyCase } from "./presets";
-import init, {
+import {
+  init,
   ExtraText,
   RXPStep1,
   RXPStep3WithGreedyConverter,
@@ -83,7 +84,7 @@ export class WithBoundaries extends Step3Options {
   ): WithBoundaries => new WithBoundaries(or(this.text, newText, ...extra));
 }
 
-const shorthand = {
+export const shorthand = {
   either,
   oneOrMore,
   zeroOrMore,
@@ -92,4 +93,3 @@ const shorthand = {
   wrapRXP,
   withBoundaries,
 };
-export default shorthand;

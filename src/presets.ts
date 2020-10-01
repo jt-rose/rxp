@@ -54,7 +54,7 @@ const anyLetterString = `[${lettersWithAnyCase}]`;
 const anyLetter = formatPreset(anyLetterString);
 const anyLetterExcept = formatExcept(anyLetterString);
 
-const presets = {
+export const presets = {
   anyCharacter,
   anyCharacterExcept,
   anyDigit,
@@ -66,4 +66,3 @@ const presets = {
   anyLetter,
   anyLetterExcept,
 };
-export default presets;

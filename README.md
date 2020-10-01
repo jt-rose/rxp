@@ -6,10 +6,8 @@ A descriptive constructor for regular expressions
 
 `npm install rxp` / `yarn add rxp`
 
-Both a default export and named exports are supported
-
 ```javascript
-import RXP from "rxp";
+import { RXP } from "rxp";
 import { init, presets, either, wrapRXP } from "rxp";
 ```
 

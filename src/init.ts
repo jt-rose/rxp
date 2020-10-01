@@ -18,7 +18,7 @@ import {
   isCaptured,
 } from "./formatText";
 import { isVariable } from "./formatVariables";
-import constructRXP from "./constructRXP";
+import { constructRXP } from "./constructRXP";
 import { WithBoundaries } from "./shorthand";
 
 // The RXP constructor receives an unformatted string, a regex literal,
@@ -401,12 +401,10 @@ class RXPStep5 extends RXPBaseUnit {
 // initialize RXP constructor, accepting a series
 // of unescaped strings, regex literals, or escaped RXP units
 // and formatting them before returning step 1 of the constructor
-const init = (
+export const init = (
   text: string | RegExp | RXPUnit,
   ...extra: ExtraText
 ): RXPStep1 => {
   const formattedText = [text, ...extra].map((x) => parseText(x)).join("");
   return new RXPStep1(formattedText);
 };
-
-export default init;

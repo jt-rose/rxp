@@ -109,7 +109,7 @@ export const isOptional: ModifyText = (text) =>
   `${withNonCaptureGrouping(text)}?`;
 export const isCaptured: ModifyText = (text) => `(${text})`;
 
-const formatText = {
+export const formatText = {
   or,
   occurs,
   occursAtLeast,
@@ -125,5 +125,3 @@ const formatText = {
   isOptional,
   isCaptured,
 };
-
-export default formatText;

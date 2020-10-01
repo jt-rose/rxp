@@ -69,7 +69,7 @@ const constructFlagMarkers = (flags: string[]) =>
 // format the text that has been modified by the RXP constructor
 // format any requested flags
 // and return a regex literal
-const constructRXP = (RXPString: string, flags: string[]): RegExp => {
+export const constructRXP = (RXPString: string, flags: string[]): RegExp => {
   if (!validateFlags(flags)) {
     throw new Error(
       `Invalid flag letter/ keyword submitted. Flags must be one of the following: ${validFlags.join(
@@ -81,5 +81,3 @@ const constructRXP = (RXPString: string, flags: string[]): RegExp => {
   const formatWithVariables = formatRXPVariables(RXPString);
   return new RegExp(formatWithVariables, flagMarkers);
 };
-
-export default constructRXP;
