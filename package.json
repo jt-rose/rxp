@@ -1,6 +1,6 @@
 {
   "name": "rxp",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "descriptive constructor for regular expressions",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -13,19 +13,21 @@
     "rxp"
   ],
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^3.6.1",
-    "@typescript-eslint/parser": "^3.6.1",
     "@types/chai": "^4.2.11",
     "@types/mocha": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^3.6.1",
+    "@typescript-eslint/parser": "^3.6.1",
+    "chai": "^4.2.0",
     "eslint": "^7.4.0",
     "mocha": "^8.0.1",
-    "chai": "^4.2.0",
+    "parcel": "^2.0.0-beta.1",
     "typescript": "^3.9.6"
   },
   "scripts": {
     "tsc": "tsc",
     "test": "mocha -r ts-node/register test/*.test.ts",
-    "prepublishOnly": "tsc -d"
+    "dev": "parcel src/index.ts",
+    "build": "parcel build src/index.ts"
   },
   "dependencies": {
     "@types/uniqid": "^5.2.0",

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.1] - 2020-09-30
+
+## Changed
+
+- minified/ bundled with parcel
+- expanded info on package.json, including correction to main path
+
 ## [v1.4.0] - 2020-09-24
 
 ## Added
@@ -71,7 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial publish to NPM
 
-[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.0...HEAD
+[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/jt-rose/rxp/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/jt-rose/rxp/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/jt-rose/rxp/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/jt-rose/rxp/compare/v1.2.1...v1.3.0
