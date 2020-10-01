@@ -7,12 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v1.4.2] - 2020-10-01
-
-## Changed
-
-- removed parcel bundler, which was causing type declaration errors resulting in 'any' types when specific types had been defined.
-
 ## [v1.4.1] - 2020-09-30
 
 ## Changed
@@ -84,8 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial publish to NPM
 
-[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.2...HEAD
-[1.4.2]: https://github.com/jt-rose/rxp/compare/v1.4.1...v1.4.2
+[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.1...HEAD
 [1.4.1]: https://github.com/jt-rose/rxp/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/jt-rose/rxp/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/jt-rose/rxp/compare/v1.3.0...v1.3.1
