@@ -1,10 +1,13 @@
 {
   "name": "rxp",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "descriptive constructor for regular expressions",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "author": "Jeff Rose",
+  "author": {
+    "name": "Jeff Rose",
+    "email": "jtr219@outlook.com"
+  },
   "license": "MIT",
   "keywords": [
     "regex",

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.4] - 2020-10-02
+
 ## Changed
 
 - imported type declarations into entry point index.ts file. Previously, imported functions that referenced interfaces or type groupings did not have those type references also imported into the index.ts file. This worked fine in a local setting, but failed to provide type support when downloading the compiled package from npm.
@@ -21,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 
-- removed parcel bundler, which may have been causing type declaration errors resulting in 'any' types when specific types had been defined.
+- Type declarations for npm downloads are incomplete, resulting in 'any' types. Parcel bundler has currently been removed while troubleshooting the issue.
 
 ## [v1.4.1] - 2020-09-30
 
@@ -94,7 +96,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial publish to NPM
 
-[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.3...HEAD
+[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.4...HEAD
+[1.4.4]: https://github.com/jt-rose/rxp/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/jt-rose/rxp/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/jt-rose/rxp/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/jt-rose/rxp/compare/v1.4.0...v1.4.1
