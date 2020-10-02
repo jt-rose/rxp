@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Changed
+
+- imported type declarations into entry point index.ts file. Previously, imported functions that referenced interfaces or type groupings did not have those type references also imported into the index.ts file. This worked fine in a local setting, but failed to provide type support when downloading the compiled package from npm.
+
 ## [v1.4.3] - 2020-10-01
 
 ## Changed
