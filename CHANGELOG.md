@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.5] - 2020-10-07
+
 ### Changed
 
 - updated rest parameters to allow for unlimited arguments while still requiring at least one argument provided.
@@ -101,7 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial publish to NPM
 
-[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.4...HEAD
+[unreleased]: https://github.com/jt-rose/rxp/compare/v1.4.5...HEAD
+[1.4.5]: https://github.com/jt-rose/rxp/compare/v1.4.4...v1.4.5
 [1.4.4]: https://github.com/jt-rose/rxp/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/jt-rose/rxp/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/jt-rose/rxp/compare/v1.4.1...v1.4.2
