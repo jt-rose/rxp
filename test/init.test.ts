@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
-import init, { RXPUnit, AndOptions, RXPBaseUnit } from "../src/init";
-import presets from "../src/presets";
+import { init, RXPUnit, AndOptions, RXPBaseUnit } from "../src/init";
+import { presets } from "../src/presets";
 
 // define expected keys for each individual step of the RXP constructor
 const everyStepKeys = ["text", "construct"];

@@ -1,7 +1,7 @@
 import { lettersWithAnyCase } from "./presets";
 import {
   init,
-  ExtraText,
+  NewText,
   RXPStep1,
   RXPStep3WithGreedyConverter,
   IsOptionalOptions,
@@ -15,25 +15,21 @@ import { parseText, or } from "./formatText";
 // for common regex constructions
 
 const either = (
-  firstOption: string | RegExp | RXPUnit,
-  secondOption: string | RegExp | RXPUnit,
-  ...extraOptions: ExtraText
-): RXPStep1 => init(firstOption).or(secondOption, ...extraOptions);
+  ...options: [
+    string | RegExp | RXPUnit,
+    string | RegExp | RXPUnit,
+    ...(string | RegExp | RXPUnit)[]
+  ]
+): RXPStep1 => init(options[0]).or(options[1], ...options.slice(2));
 
-const oneOrMore = (
-  text: string | RegExp | RXPUnit,
-  ...extra: ExtraText
-): RXPStep3WithGreedyConverter => init(text, ...extra).occursOnceOrMore;
+const oneOrMore = (...text: NewText): RXPStep3WithGreedyConverter =>
+  init(...text).occursOnceOrMore;
 
-const zeroOrMore = (
-  text: string | RegExp | RXPUnit,
-  ...extra: ExtraText
-): RXPStep3WithGreedyConverter => init(text, ...extra).occursZeroOrMore;
+const zeroOrMore = (...text: NewText): RXPStep3WithGreedyConverter =>
+  init(...text).occursZeroOrMore;
 
-const optional = (
-  text: string | RegExp | RXPUnit,
-  ...extra: ExtraText
-): IsOptionalOptions => init(text, ...extra).isOptional;
+const optional = (...text: NewText): IsOptionalOptions =>
+  init(...text).isOptional;
 
 const upperOrLowerCase = (letter: string): RXPStep1 => {
   const confirmValidLetter =
@@ -53,21 +49,17 @@ const upperOrLowerCase = (letter: string): RXPStep1 => {
 const wrapRXP = (
   before: string | RegExp | RXPUnit,
   after: string | RegExp | RXPUnit
-) => (wrappedItem: string | RegExp | RXPUnit, ...extra: ExtraText): RXPStep1 =>
-  init(before, wrappedItem, ...extra, after);
+) => (...wrappedItem: NewText): RXPStep1 => init(before, ...wrappedItem, after);
 
 // wrap text in \b word boundaries and remove RXP - occurs options
 // to avoid faulty regex
-const withBoundaries = (
-  text: string | RegExp | RXPUnit,
-  ...extra: ExtraText
-): WithBoundaries => {
-  const formattedText = [/\b/, text, ...extra, /\b/]
-    .map((x) => parseText(x))
-    .join("");
+const withBoundaries = (...text: NewText): WithBoundaries => {
+  const formattedText = [/\b/, ...text, /\b/].map((x) => parseText(x)).join("");
   return new WithBoundaries(formattedText);
 };
 
+// create a special version of the consructor that excludes the occurs options
+// since they will cause an error when combined with 'withBoundaries'
 export class WithBoundaries extends Step3Options {
   text: string;
   construct: (...flags: string[]) => RegExp; //needs testing
@@ -78,10 +70,8 @@ export class WithBoundaries extends Step3Options {
     this.text = baseUnit.text;
     this.construct = baseUnit.construct;
   }
-  or = (
-    newText: string | RegExp | RXPUnit,
-    ...extra: ExtraText
-  ): WithBoundaries => new WithBoundaries(or(this.text, newText, ...extra));
+  or = (...text: NewText): WithBoundaries =>
+    new WithBoundaries(or(this.text, ...text));
 }
 
 export const shorthand = {

@@ -1,6 +1,6 @@
 import "mocha";
 import { expect } from "chai";
-import shorthand from "../src/shorthand";
+import { shorthand } from "../src/shorthand";
 const {
   either,
   oneOrMore,

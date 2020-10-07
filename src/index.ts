@@ -7,7 +7,7 @@ import {
   RXPUnit,
   RXPStep1,
   RXPStep3WithGreedyConverter,
-  ExtraText,
+  NewText,
   IsOptionalOptions,
 } from "./init";
 import { WithBoundaries } from "./shorthand";

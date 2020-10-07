@@ -1,6 +1,6 @@
 import "mocha";
 import { expect } from "chai";
-import presets from "../src/presets";
+import { presets } from "../src/presets";
 const {
   anyCharacter,
   anyCharacterExcept,

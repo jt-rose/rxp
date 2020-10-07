@@ -1,7 +1,8 @@
 import "mocha";
 import { expect } from "chai";
-import init from "../src/init";
-import formatText, {
+import { init } from "../src/init";
+import {
+  formatText,
   parseText,
   formatRegex,
   convertRegexToString,

@@ -4,30 +4,23 @@ import { RXPStep1 } from "./init";
 
 const formatPreset = (presetCharacter: string) => new RXPStep1(presetCharacter);
 const formatExcept = (baseString: string) => (
-  exception: string,
-  ...extra: string[]
+  ...exception: [string, ...string[]]
 ) => {
-  const allExceptions = [exception, ...extra];
-  const invalidCharacters = allExceptions.filter(
-    (x) => !baseString.includes(x)
-  );
+  const invalidCharacters = exception.filter((x) => !baseString.includes(x));
   if (invalidCharacters.length > 0) {
     throw new Error(
       `The characters ${invalidCharacters} are not valid for removal from this RXP unit. Only the following characters may be provided for removal: ${baseString}`
     );
   }
-  const lettersToRemove = allExceptions.join("");
+  const lettersToRemove = exception.join("");
   const removeRegex = new RegExp(`[${lettersToRemove}]`, "g");
   const updatedBaseString = baseString.replace(removeRegex, "");
   return formatPreset(updatedBaseString);
 };
 
 const anyCharacter = formatPreset(".");
-const anyCharacterExcept = (
-  exception: string,
-  ...extra: string[]
-): RXPStep1 => {
-  const anyExcept = `[^${[exception, ...extra].join("")}]`;
+const anyCharacterExcept = (...exception: [string, ...string[]]): RXPStep1 => {
+  const anyExcept = `[^${exception.join("")}]`;
   return new RXPStep1(anyExcept);
 };
 
