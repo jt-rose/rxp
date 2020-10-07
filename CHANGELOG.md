@@ -7,38 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated rest parameters to allow for unlimited arguments while still requiring at least one argument provided.
+
 ## [v1.4.4] - 2020-10-02
 
-## Changed
+### Changed
 
 - imported type declarations into entry point index.ts file. Previously, imported functions that referenced interfaces or type groupings did not have those type references also imported into the index.ts file. This worked fine in a local setting, but failed to provide type support when downloading the compiled package from npm.
 
 ## [v1.4.3] - 2020-10-01
 
-## Changed
+### Changed
 
 - removed default exports, which may be causing issues with npm type declarations.
 
 ## [v1.4.2] - 2020-10-01
 
-## Changed
+### Changed
 
 - Type declarations for npm downloads are incomplete, resulting in 'any' types. Parcel bundler has currently been removed while troubleshooting the issue.
 
 ## [v1.4.1] - 2020-09-30
 
-## Changed
+### Changed
 
 - minified/ bundled with parcel
 - expanded info on package.json, including correction to main path
 
 ## [v1.4.0] - 2020-09-24
 
-## Added
+### Added
 
 - added `withBoundaries` function to initialize an RXP unit with `\b` word boundaries on each side. A custom constructor class was used to remove the step 2 - occurs family of modifiers as these would not work with word boundaries
 
-## Changed
+### Changed
 
 - replaced `NewText` type for constructor arguments with specific `string | RegExp | RXPUnit` types listed to improve intellisense recommendations
 
