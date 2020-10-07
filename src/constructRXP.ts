@@ -36,12 +36,28 @@ const validFlags = [
   stickyFlagKeyWord,
 ];
 
+export type ValidFlag =
+  | ""
+  | "default"
+  | "g"
+  | "global"
+  | "i"
+  | "ignoreCase"
+  | "m"
+  | "multiline"
+  | "s"
+  | "dotAll"
+  | "u"
+  | "unicode"
+  | "y"
+  | "sticky";
+
 // confirm requested flag is valid
-const validateFlag = (flag: string) => validFlags.includes(flag);
-const validateFlags = (flags: string[]) => flags.every(validateFlag);
+const validateFlag = (flag: ValidFlag) => validFlags.includes(flag);
+const validateFlags = (flags: ValidFlag[]) => flags.every(validateFlag);
 
 // convert flag keynames such as 'global' to correct flag "g"
-const convertFlagName = (flag: string) => {
+const convertFlagName = (flag: ValidFlag) => {
   switch (flag) {
     case defaultFlagKeyWord:
       return defaultFlag;
@@ -63,13 +79,13 @@ const convertFlagName = (flag: string) => {
 };
 
 // apply flag conversion to multiple submitted flags
-const constructFlagMarkers = (flags: string[]) =>
+const constructFlagMarkers = (flags: ValidFlag[]) =>
   [...new Set(flags.map(convertFlagName))].join("");
 
 // format the text that has been modified by the RXP constructor
 // format any requested flags
 // and return a regex literal
-export const constructRXP = (RXPString: string, flags: string[]): RegExp => {
+export const constructRXP = (RXPString: string, flags: ValidFlag[]): RegExp => {
   if (!validateFlags(flags)) {
     throw new Error(
       `Invalid flag letter/ keyword submitted. Flags must be one of the following: ${validFlags.join(

@@ -415,9 +415,6 @@ describe("RXP Constructor - All Steps", () => {
       expect(testMultipleFlags.global).to.be.true;
       expect(testMultipleFlags.ignoreCase).to.be.true;
       expect(testMultipleFlags.unicode).to.be.false;
-
-      // test rejection of invalid flags/ keywords
-      expect(() => init("sample").construct("whoops!")).to.throw();
     });
   });
 });

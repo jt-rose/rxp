@@ -18,7 +18,7 @@ import {
   isCaptured,
 } from "./formatText";
 import { isVariable } from "./formatVariables";
-import { constructRXP } from "./constructRXP";
+import { constructRXP, ValidFlag } from "./constructRXP";
 import { WithBoundaries } from "./shorthand";
 
 // The RXP constructor receives an unformatted string, a regex literal,
@@ -72,7 +72,7 @@ export class RXPBaseUnit {
   constructor(text: string) {
     this.text = text;
   }
-  construct = (...flags: string[]): RegExp => constructRXP(this.text, flags);
+  construct = (...flags: ValidFlag[]): RegExp => constructRXP(this.text, flags);
 }
 
 interface IsOptionalAndOptions {
@@ -290,7 +290,7 @@ class Step3OptionsWithoutAtEnd extends Step3OptionsWithoutStep4 {
 
 export class RXPStep1 extends Step3Options {
   text: string;
-  construct: (...flags: string[]) => RegExp;
+  construct: (...flags: ValidFlag[]) => RegExp;
   constructor(text: string) {
     super(text);
     const baseUnit = new RXPBaseUnit(text);

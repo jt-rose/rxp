@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated rest parameters to allow for unlimited arguments while still requiring at least one argument provided.
+- updated rest parameters to allow for unlimited arguments while still requiring at least one argument provided.
+- replaced generic string type for regex flags with string literal type for better intellisense recommendations.
 
 ## [v1.4.4] - 2020-10-02
 

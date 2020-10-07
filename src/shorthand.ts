@@ -10,6 +10,7 @@ import {
   Step3Options,
 } from "./init";
 import { parseText, or } from "./formatText";
+import { ValidFlag } from "./constructRXP";
 
 // Provide shorthand functions to improve readability
 // for common regex constructions
@@ -62,7 +63,7 @@ const withBoundaries = (...text: NewText): WithBoundaries => {
 // since they will cause an error when combined with 'withBoundaries'
 export class WithBoundaries extends Step3Options {
   text: string;
-  construct: (...flags: string[]) => RegExp; //needs testing
+  construct: (...flags: ValidFlag[]) => RegExp; //needs testing
 
   constructor(text: string) {
     super(text);
